@@ -1,0 +1,23 @@
+[package]
+name = "airpad-inject"
+version = "0.1.0"
+edition = "2021"
+authors = ["Airpad Team"]
+description = "Lightweight Linux uinput injection daemon for Airpad"
+
+[[bin]]
+name = "airpad-inject"
+path = "src/main.rs"
+
+[[bin]]
+name = "airpad-test-cli"
+path = "src/bin/test_cli.rs"
+
+[dependencies]
+evdev = "0.13.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+ctrlc = "3.4"
+
+[dev-dependencies]
+tempfile = "3.10"

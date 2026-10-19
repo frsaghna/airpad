@@ -1,0 +1,12 @@
+[Unit]
+Description=Airpad Input Injection Helper
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/airpad-inject
+Restart=on-failure
+RestartSec=2s
+KillMode=process
+
+[Install]
+WantedBy=default.target
