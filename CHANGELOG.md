@@ -45,6 +45,13 @@ All notable changes to the Airpad project will be documented in this file.
 - Implemented `AirpadInjectClient` Unix domain socket client connecting to `airpad-inject`.
 - Verified Phase 4 acceptance criteria: smooth pointer control, all gestures stream across TLS session, tap/double-tap/drag/scroll, and guaranteed release of held buttons upon disconnection.
 
+### Phase 5 — Keyboard
+- Implemented `KeyboardState` managing text IME mode and on-screen key mode with sticky modifiers (Ctrl, Alt, Shift, Meta).
+- Implemented shortcuts helper for multi-key combos (Ctrl+C, Ctrl+V, Alt+Tab).
+- Enhanced `airpad-inject` in Rust with Linux Unicode hex input (`Ctrl+Shift+U <hex> Enter`) for non-ASCII/emoji characters and modifier key synchronization.
+- Verified Phase 5 acceptance criteria: typed full sentence, dispatched Ctrl+C / Ctrl+V / Alt+Tab shortcuts, and streamed Unicode / non-ASCII strings across TLS session.
+
+
 
 
 

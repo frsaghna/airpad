@@ -203,13 +203,22 @@ impl VirtualInput {
                 }
             }
 
-            ProtocolEvent::Key { code, state, .. } => {
+            ProtocolEvent::Key { code, state, mods } => {
                 let key = map_key_code(code).ok_or_else(|| {
                     Error::new(ErrorKind::InvalidInput, format!("Unknown key code: {code}"))
                 })?;
 
                 let val = match state.to_lowercase().as_str() {
                     "down" => {
+                        // Apply any modifier keys if not already pressed down
+                        for m in mods {
+                            if let Some(m_key) = map_modifier_name(m) {
+                                if !self.pressed_keys.contains(&m_key) {
+                                    self.pressed_keys.insert(m_key);
+                                    self.device.emit(&[InputEvent::new(EventType::KEY.0, m_key.code(), 1)])?;
+                                }
+                            }
+                        }
                         self.pressed_keys.insert(key);
                         1
                     }
@@ -271,7 +280,45 @@ impl VirtualInput {
             if needs_shift {
                 self.device.emit(&[InputEvent::new(EventType::KEY.0, KeyCode::KEY_LEFTSHIFT.code(), 0)])?;
             }
+        } else {
+            // Non-ASCII & Unicode fallback strategy: Linux Ctrl+Shift+U <hex> Enter
+            self.type_unicode_hex(ch)?;
         }
+        Ok(())
+    }
+
+    fn type_unicode_hex(&mut self, ch: char) -> io::Result<()> {
+        let code_point = ch as u32;
+        let hex_str = format!("{:x}", code_point);
+
+        // Press Ctrl+Shift+U
+        self.device.emit(&[
+            InputEvent::new(EventType::KEY.0, KeyCode::KEY_LEFTCTRL.code(), 1),
+            InputEvent::new(EventType::KEY.0, KeyCode::KEY_LEFTSHIFT.code(), 1),
+            InputEvent::new(EventType::KEY.0, KeyCode::KEY_U.code(), 1),
+        ])?;
+        sleep(Duration::from_millis(15));
+        self.device.emit(&[
+            InputEvent::new(EventType::KEY.0, KeyCode::KEY_U.code(), 0),
+            InputEvent::new(EventType::KEY.0, KeyCode::KEY_LEFTSHIFT.code(), 0),
+            InputEvent::new(EventType::KEY.0, KeyCode::KEY_LEFTCTRL.code(), 0),
+        ])?;
+        sleep(Duration::from_millis(15));
+
+        // Type hex digits
+        for hex_char in hex_str.chars() {
+            if let Some((k, _)) = map_char_to_key(hex_char) {
+                self.device.emit(&[InputEvent::new(EventType::KEY.0, k.code(), 1)])?;
+                sleep(Duration::from_millis(10));
+                self.device.emit(&[InputEvent::new(EventType::KEY.0, k.code(), 0)])?;
+            }
+        }
+        sleep(Duration::from_millis(15));
+
+        // Press Enter to commit unicode sequence
+        self.device.emit(&[InputEvent::new(EventType::KEY.0, KeyCode::KEY_ENTER.code(), 1)])?;
+        sleep(Duration::from_millis(10));
+        self.device.emit(&[InputEvent::new(EventType::KEY.0, KeyCode::KEY_ENTER.code(), 0)])?;
         Ok(())
     }
 
@@ -299,6 +346,16 @@ impl VirtualInput {
 impl Drop for VirtualInput {
     fn drop(&mut self) {
         let _ = self.release_all();
+    }
+}
+
+pub fn map_modifier_name(name: &str) -> Option<KeyCode> {
+    match name.to_lowercase().as_str() {
+        "ctrl" | "control" => Some(KeyCode::KEY_LEFTCTRL),
+        "alt" => Some(KeyCode::KEY_LEFTALT),
+        "shift" => Some(KeyCode::KEY_LEFTSHIFT),
+        "meta" | "super" => Some(KeyCode::KEY_LEFTMETA),
+        _ => None,
     }
 }
 
@@ -495,5 +552,14 @@ mod tests {
         let (k, shift) = map_char_to_key('!').unwrap();
         assert_eq!(k, KeyCode::KEY_1);
         assert!(shift);
+    }
+
+    #[test]
+    fn test_map_modifier_name() {
+        assert_eq!(map_modifier_name("ctrl"), Some(KeyCode::KEY_LEFTCTRL));
+        assert_eq!(map_modifier_name("alt"), Some(KeyCode::KEY_LEFTALT));
+        assert_eq!(map_modifier_name("shift"), Some(KeyCode::KEY_LEFTSHIFT));
+        assert_eq!(map_modifier_name("meta"), Some(KeyCode::KEY_LEFTMETA));
+        assert_eq!(map_modifier_name("unknown"), None);
     }
 }
