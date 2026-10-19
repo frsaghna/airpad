@@ -23,3 +23,12 @@ All notable changes to the Airpad project will be documented in this file.
 - Added udev rules (`99-airpad-uinput.rules`), systemd user service (`airpad-inject.service`), and `install.sh`.
 - Performed Flutter Linux desktop spike with `tray_manager`, confirming compilation on Hyprland / Arch Linux.
 
+### Phase 2 — Discovery
+- Implemented `DeviceIdentity` cryptographic identity in `airpad_core` with self-signed X.509 cert and RSA keypair generation, DER export, and SHA-256 fingerprinting.
+- Implemented `AliasGenerator` producing curated friendly two-word names.
+- Implemented `MulticastDiscoveryService` supporting UDP multicast (`224.0.0.167:53318`) across all interfaces with broadcast fallback.
+- Implemented `HttpRegisterServer` and `SubnetScanner` for HTTP fallback discovery when multicast is blocked by AP isolation.
+- Implemented `DiscoveryManager` providing unified live tracking of active receivers and automatic expiration.
+- Verified Phase 2 acceptance criteria: phone discovers desktop in < 50ms, HTTP fallback works when multicast is unavailable, and self-discovery is filtered out.
+
+
