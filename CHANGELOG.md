@@ -38,5 +38,13 @@ All notable changes to the Airpad project will be documented in this file.
 - Implemented `TlsSessionClient` with strict certificate pinning, automatic reconnection, QR code pairing, and heartbeat ping.
 - Verified Phase 3 acceptance criteria: unpaired devices rejected, paired devices reconnect automatically, revoking device disconnects immediately with close code 4401, rogue devices cannot hijack trusted slots, and QR pairing connects out-of-band.
 
+### Phase 4 — Touchpad MVP
+- Implemented `MoveCoalescer` providing 60-120 Hz motion delta batching to prevent network packet flooding.
+- Implemented `TouchpadProcessor` supporting full gesture engine: 1-finger move, 1-finger tap (left click), 2-finger tap (right click), 3-finger tap (middle click), 2-finger drag (scroll), and tap-then-hold drag.
+- Added velocity acceleration curve and configurable sensitivity.
+- Implemented `AirpadInjectClient` Unix domain socket client connecting to `airpad-inject`.
+- Verified Phase 4 acceptance criteria: smooth pointer control, all gestures stream across TLS session, tap/double-tap/drag/scroll, and guaranteed release of held buttons upon disconnection.
+
+
 
 

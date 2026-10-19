@@ -35,6 +35,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   tray_manager: ^0.8.0
+  airpad_core:
+    path: ../../packages/airpad_core
 
 dev_dependencies:
   flutter_test:
