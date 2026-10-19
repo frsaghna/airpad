@@ -66,6 +66,10 @@ class TouchpadProcessor {
   /// Call when a touch pointer touches down.
   void onPointerDown(int pointerId, double x, double y) {
     final now = DateTime.now();
+
+    // Prune any stale touches older than 1.5 seconds (safeguard against dropped cancel events)
+    _activeTouches.removeWhere((_, tp) => now.difference(tp.time).inMilliseconds > 1500);
+
     _activeTouches[pointerId] = _TouchPoint(
       id: pointerId,
       startX: x,
@@ -119,13 +123,15 @@ class TouchpadProcessor {
 
       _coalescer.addDelta(finalDx, finalDy);
     } else if (_activeTouches.length == 2) {
-      // 2 Finger scroll
-      final scrollMultiplier = naturalScroll ? 1.0 : -1.0;
-      final event = ScrollEvent(
-        dx: deltaX * sensitivity,
-        dy: deltaY * sensitivity * scrollMultiplier,
-      );
-      _emitEvent(event);
+      // 2 Finger scroll: only emit delta for the primary pointer to avoid duplicate scroll flood
+      if (_activeTouches.keys.first == pointerId) {
+        final scrollMultiplier = naturalScroll ? 1.0 : -1.0;
+        final event = ScrollEvent(
+          dx: deltaX * sensitivity,
+          dy: deltaY * sensitivity * scrollMultiplier,
+        );
+        _emitEvent(event);
+      }
     }
   }
 

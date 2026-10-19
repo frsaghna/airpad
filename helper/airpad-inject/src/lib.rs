@@ -136,13 +136,15 @@ impl VirtualInput {
 
             ProtocolEvent::Scroll { dx, dy } => {
                 let mut events = Vec::new();
-                let wx = *dx as i32;
-                let wy = *dy as i32;
-                if wx != 0 {
-                    events.push(InputEvent::new(EventType::RELATIVE.0, RelativeAxisCode::REL_HWHEEL.0, wx));
+                let wx = (*dx / 10.0).round() as i32;
+                let wy = (*dy / 10.0).round() as i32;
+                let clamped_wx = wx.clamp(-10, 10);
+                let clamped_wy = wy.clamp(-10, 10);
+                if clamped_wx != 0 {
+                    events.push(InputEvent::new(EventType::RELATIVE.0, RelativeAxisCode::REL_HWHEEL.0, clamped_wx));
                 }
-                if wy != 0 {
-                    events.push(InputEvent::new(EventType::RELATIVE.0, RelativeAxisCode::REL_WHEEL.0, wy));
+                if clamped_wy != 0 {
+                    events.push(InputEvent::new(EventType::RELATIVE.0, RelativeAxisCode::REL_WHEEL.0, clamped_wy));
                 }
                 if !events.is_empty() {
                     self.device.emit(&events)?;

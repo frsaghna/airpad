@@ -64,6 +64,9 @@ class AirpadInjectClient {
       _socket!.write(payload);
       await _socket!.flush();
     } catch (_) {
+      try {
+        _socket?.destroy();
+      } catch (_) {}
       _socket = null;
     }
   }
