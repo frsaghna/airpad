@@ -82,4 +82,4 @@ All notable changes to the Airpad project will be documented in this file.
 - Documented project architecture, verification checklist, and setup:
   - Created `docs/testing.md` with manual device checklist, AP isolation fallback tests, and latency benchmarking targets.
   - Created root `README.md` with installation guides, security guarantees, and troubleshooting.
-- Verified Definition of Done (v1): all 75 monorepo tests pass, linter passes with zero warnings, fresh machine installable end to end.
+- Verified Definition of Done (v1): all 77 monorepo tests pass, linter passes with zero warnings, fresh machine installable end to end.
