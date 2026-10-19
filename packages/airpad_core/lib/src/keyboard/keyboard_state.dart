@@ -79,10 +79,9 @@ class KeyboardState {
     _emitEvent(event);
   }
 
-  /// Convenience method to simulate pressing and releasing a key.
+  /// Convenience method to simulate pressing and releasing a key atomically.
   void tapKey(String code) {
-    sendKey(code, KeyState.down);
-    sendKey(code, KeyState.up);
+    sendKey(code, KeyState.press);
   }
 
   /// Convenience method to send a shortcut combination (e.g. Ctrl+C, Ctrl+V, Alt+Tab).

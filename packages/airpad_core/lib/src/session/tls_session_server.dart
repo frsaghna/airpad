@@ -168,8 +168,10 @@ class TlsSessionServer {
         // Security Req #7: Validate and bound payload size (max 8KB)
         if (rawStr.length > 8192) return;
 
-        // Security Req #7: Rate limit incoming events (max 240/sec)
-        if (!rateLimiter.tryAcquire()) return;
+        // Security Req #7: Rate limit high-frequency motion events (max 240/sec).
+        // Never drop discrete state events (keys, buttons, clicks) to prevent stuck keys.
+        final isHighFrequency = rawStr.contains('"type":"move"') || rawStr.contains('"type":"scroll"');
+        if (isHighFrequency && !rateLimiter.tryAcquire()) return;
 
         // 1. Handle heartbeat ping
         if (rawStr == 'ping' || rawStr == '{"type":"ping"}') {

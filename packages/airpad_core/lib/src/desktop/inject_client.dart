@@ -60,9 +60,7 @@ class AirpadInjectClient {
     }
 
     try {
-      final payload = '${event.toJsonString()}\n';
-      _socket!.write(payload);
-      await _socket!.flush();
+      _socket?.write('${event.toJsonString()}\n');
     } catch (_) {
       try {
         _socket?.destroy();

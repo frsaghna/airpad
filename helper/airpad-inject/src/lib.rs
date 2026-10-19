@@ -1,10 +1,10 @@
 use evdev::uinput::VirtualDevice;
 use evdev::{AttributeSet, EventType, InputEvent, KeyCode, RelativeAxisCode};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::{self, Error, ErrorKind};
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type")]
@@ -55,6 +55,7 @@ fn default_click_count() -> u32 {
 pub struct VirtualInput {
     device: VirtualDevice,
     pressed_keys: HashSet<KeyCode>,
+    press_times: HashMap<KeyCode, Instant>,
 }
 
 impl VirtualInput {
@@ -114,10 +115,31 @@ impl VirtualInput {
         Ok(Self {
             device,
             pressed_keys: HashSet::new(),
+            press_times: HashMap::new(),
         })
     }
 
+    fn cleanup_stale_keys(&mut self) -> io::Result<()> {
+        let now = Instant::now();
+        let mut stale = Vec::new();
+
+        for (&key, &time) in &self.press_times {
+            if is_regular_typing_key(key) && now.duration_since(time) > Duration::from_millis(1500) {
+                stale.push(key);
+            }
+        }
+
+        for key in stale {
+            self.pressed_keys.remove(&key);
+            self.press_times.remove(&key);
+            self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), 0)])?;
+        }
+
+        Ok(())
+    }
+
     pub fn handle_event(&mut self, event: &ProtocolEvent) -> io::Result<()> {
+        self.cleanup_stale_keys()?;
         match event {
             ProtocolEvent::Move { dx, dy } => {
                 let rx = *dx as i32;
@@ -243,14 +265,17 @@ impl VirtualInput {
                             }
                         }
                         self.pressed_keys.insert(key);
+                        self.press_times.insert(key, Instant::now());
                         self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), 1)])?;
                     }
                     "up" => {
                         self.pressed_keys.remove(&key);
+                        self.press_times.remove(&key);
                         self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), 0)])?;
                         for m in mods {
                             if let Some(m_key) = map_modifier_name(m) {
                                 if self.pressed_keys.remove(&m_key) {
+                                    self.press_times.remove(&m_key);
                                     self.device.emit(&[InputEvent::new(EventType::KEY.0, m_key.code(), 0)])?;
                                 }
                             }
@@ -358,6 +383,7 @@ impl VirtualInput {
             return Ok(());
         }
 
+        self.press_times.clear();
         let mut events = Vec::new();
         for key in self.pressed_keys.drain() {
             events.push(InputEvent::new(EventType::KEY.0, key.code(), 0));
@@ -370,6 +396,25 @@ impl VirtualInput {
     pub fn pressed_count(&self) -> usize {
         self.pressed_keys.len()
     }
+}
+
+fn is_regular_typing_key(key: KeyCode) -> bool {
+    !matches!(
+        key,
+        KeyCode::BTN_LEFT
+            | KeyCode::BTN_RIGHT
+            | KeyCode::BTN_MIDDLE
+            | KeyCode::BTN_SIDE
+            | KeyCode::BTN_EXTRA
+            | KeyCode::KEY_LEFTCTRL
+            | KeyCode::KEY_RIGHTCTRL
+            | KeyCode::KEY_LEFTALT
+            | KeyCode::KEY_RIGHTALT
+            | KeyCode::KEY_LEFTSHIFT
+            | KeyCode::KEY_RIGHTSHIFT
+            | KeyCode::KEY_LEFTMETA
+            | KeyCode::KEY_RIGHTMETA
+    )
 }
 
 impl Drop for VirtualInput {

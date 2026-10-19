@@ -61,5 +61,47 @@ void main() {
       await server.close();
       await tempDir.delete(recursive: true);
     });
+
+    test('handles rapid concurrent sendEvent without crashing socket', () async {
+      final tempDir = await Directory.systemTemp.createTemp('airpad_ipc_concurrent_test_');
+      final socketPath = '${tempDir.path}/test_concurrent.sock';
+
+      final server = await ServerSocket.bind(
+        InternetAddress(socketPath, type: InternetAddressType.unix),
+        0,
+      );
+
+      final receivedLines = <String>[];
+      final completer = Completer<void>();
+
+      server.listen((clientSocket) {
+        clientSocket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .listen((line) {
+          receivedLines.add(line);
+          if (receivedLines.length >= 100 && !completer.isCompleted) {
+            completer.complete();
+          }
+        });
+      });
+
+      final client = AirpadInjectClient(customSocketPath: socketPath);
+      await client.connect();
+
+      // Fire 100 concurrent un-awaited events like a high-frequency touchpad stream
+      for (int i = 0; i < 100; i++) {
+        client.sendEvent(MoveEvent(dx: i.toDouble(), dy: 1.0));
+      }
+
+      await completer.future.timeout(const Duration(seconds: 3));
+      expect(receivedLines.length, equals(100));
+      expect(client.isConnected, isTrue);
+
+      await client.disconnect();
+      await server.close();
+      await tempDir.delete(recursive: true);
+    });
   });
 }
