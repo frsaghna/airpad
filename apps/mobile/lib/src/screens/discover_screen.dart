@@ -138,7 +138,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   Future<void> _openManualIpDialog() async {
     final ipController = TextEditingController(text: '192.168.1.');
-    final portController = TextEditingController(text: '53317');
+    final portController = TextEditingController(text: '${AirpadProtocolDefaults.port}');
 
     final result = await showDialog<bool>(
       context: context,
@@ -164,9 +164,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: portController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Port',
-                hintText: '53317',
+                hintText: '${AirpadProtocolDefaults.port}',
               ),
               keyboardType: TextInputType.number,
             ),
@@ -189,7 +189,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
     if (result == true && mounted) {
       final ip = ipController.text.trim();
-      final port = int.tryParse(portController.text.trim()) ?? 53317;
+      final port = int.tryParse(portController.text.trim()) ?? AirpadProtocolDefaults.port;
 
       if (ip.isNotEmpty) {
         setState(() {

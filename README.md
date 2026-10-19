@@ -176,9 +176,9 @@ ls -l /dev/uinput
 
 ### Desktop Not Discovered on Mobile
 1. Ensure both devices are connected to the same Wi-Fi subnet.
-2. Check local firewall: ensure UDP port `53318` and TCP port `53317` are allowed.
+2. Check local firewall: ensure UDP port `53318` and TCP port `53318` are allowed.
    ```bash
-   sudo ufw allow 53317/tcp
+   sudo ufw allow 53318/tcp
    sudo ufw allow 53318/udp
    ```
 3. If your Wi-Fi router has AP Isolation enabled, use **Scan QR** or **Enter IP** to connect directly.

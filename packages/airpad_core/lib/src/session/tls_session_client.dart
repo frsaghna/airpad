@@ -99,7 +99,7 @@ class TlsSessionClient {
       final ws = await WebSocket.connect(
         uri.toString(),
         customClient: httpClient,
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 10));
 
       _socket = ws;
 
@@ -131,8 +131,12 @@ class TlsSessionClient {
         onError: (e) => _handleDisconnection(reason: e.toString()),
       );
     } catch (e) {
-      _handleDisconnection(reason: e.toString());
-      rethrow;
+      String reason = e.toString();
+      if (e is TimeoutException) {
+        reason = 'Connection timed out to $host:$port. Ensure AIRPAD is running and port $port is allowed by your firewall (e.g. "sudo ufw allow $port").';
+      }
+      _handleDisconnection(reason: reason);
+      throw Exception(reason);
     }
   }
 

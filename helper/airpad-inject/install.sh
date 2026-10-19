@@ -60,6 +60,15 @@ if [ "$EUID" -eq 0 ]; then
   if [ "$REAL_USER" != "root" ]; then
     usermod -aG input "$REAL_USER" 2>/dev/null || true
   fi
+
+  # Configure UFW if installed and active
+  if command -v ufw >/dev/null 2>&1; then
+    if ufw status 2>/dev/null | grep -q "Status: active"; then
+      ufw allow 53318/tcp comment 'AIRPAD Session' >/dev/null 2>&1 || true
+      ufw allow 53318/udp comment 'AIRPAD Discovery' >/dev/null 2>&1 || true
+      echo "✓ UFW firewall rules added for port 53318 (TCP/UDP)."
+    fi
+  fi
 else
   if [ -f /etc/udev/rules.d/99-airpad-uinput.rules ]; then
     echo "Udev rule already installed in /etc/udev/rules.d/"
