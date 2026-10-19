@@ -36,6 +36,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   airpad_core:
     path: ../../packages/airpad_core
+  airpad_ui:
+    path: ../../packages/airpad_ui
+  mobile_scanner: ^7.4.2
+  path_provider: ^2.1.6
+  wakelock_plus: ^1.8.1
 
 dev_dependencies:
   flutter_test:

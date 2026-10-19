@@ -1,122 +1,477 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:airpad_core/airpad_core.dart';
+import 'package:airpad_ui/airpad_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const AirpadDesktopApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class AirpadDesktopApp extends StatefulWidget {
+  const AirpadDesktopApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<AirpadDesktopApp> createState() => _AirpadDesktopAppState();
+}
+
+class _AirpadDesktopAppState extends State<AirpadDesktopApp> {
+  bool _isDark = true;
+
+  void _toggleTheme() {
+    setState(() => _isDark = !_isDark);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      title: 'AIRPAD Receiver',
+      debugShowCheckedModeBanner: false,
+      theme: _isDark ? AirTheme.darkTheme : AirTheme.lightTheme,
+      home: AirpadDesktopHome(
+        onToggleTheme: _toggleTheme,
+        isDark: _isDark,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class AirpadDesktopHome extends StatefulWidget {
+  const AirpadDesktopHome({
+    super.key,
+    required this.onToggleTheme,
+    required this.isDark,
+  });
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  final VoidCallback onToggleTheme;
+  final bool isDark;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<AirpadDesktopHome> createState() => _AirpadDesktopHomeState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
+  DeviceIdentity? _identity;
+  TrustStore? _trustStore;
+  TlsSessionServer? _sessionServer;
+  DiscoveryManager? _discoveryManager;
+  AirpadInjectClient? _injectClient;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  AirpadDevice? _activeController;
+  bool _isAdvertising = false;
+  bool _askEveryTime = false;
+  bool _autoStart = false;
+  String _localIp = '127.0.0.1';
+  bool _injectConnected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeServices();
+  }
+
+  Future<void> _initializeServices() async {
+    final home = Platform.environment['HOME'] ?? '';
+    final configDir = Directory('$home/.config/airpad');
+    if (!await configDir.exists()) {
+      await configDir.create(recursive: true);
+    }
+
+    // 1. Load or generate DeviceIdentity
+    final idFile = File('${configDir.path}/identity.json');
+    DeviceIdentity id;
+    if (await idFile.exists()) {
+      try {
+        final content = await idFile.readAsString();
+        id = DeviceIdentity.fromJson(jsonDecode(content) as Map<String, dynamic>);
+      } catch (_) {
+        id = await DeviceIdentity.generate();
+        await idFile.writeAsString(jsonEncode(id.toJson()), flush: true);
+      }
+    } else {
+      id = await DeviceIdentity.generate();
+      await idFile.writeAsString(jsonEncode(id.toJson()), flush: true);
+    }
+
+    // 2. Trust store
+    final trustFile = File('${configDir.path}/trusted.json');
+    final trust = TrustStore(storageFile: trustFile);
+    await trust.load();
+
+    // 3. Determine primary IP address
+    final ifaces = await NetworkInterface.list(type: InternetAddressType.IPv4, includeLoopback: false);
+    if (ifaces.isNotEmpty && ifaces.first.addresses.isNotEmpty) {
+      _localIp = ifaces.first.addresses.first.address;
+    }
+
+    final localDevice = id.toDevice(
+      deviceType: DeviceType.desktop,
+      port: AirpadProtocolDefaults.port,
+      ip: _localIp,
+    );
+
+    // 4. Inject client to helper daemon
+    final inject = AirpadInjectClient();
+    _injectConnected = await inject.connect();
+
+    // 5. TLS Session Server
+    final server = TlsSessionServer(
+      localIdentity: id,
+      trustStore: trust,
+      port: AirpadProtocolDefaults.port,
+      askEveryTime: _askEveryTime,
+    );
+    await server.start();
+
+    // Forward events from session to uinput helper
+    server.onEventReceived.listen((event) {
+      inject.sendEvent(event);
     });
+
+    server.activeControllerStream.listen((controller) {
+      setState(() {
+        _activeController = controller;
+      });
+    });
+
+    server.onClientDisconnected.listen((_) {
+      // Disconnect clears any held keys in the helper
+      inject.disconnect();
+    });
+
+    // Pairing prompt dialog handler
+    server.onPairingPrompt.listen((prompt) {
+      _showPairingPromptDialog(prompt);
+    });
+
+    // 6. Discovery Manager
+    final discovery = DiscoveryManager(
+      localDevice: localDevice,
+      port: AirpadProtocolDefaults.port,
+    );
+    await discovery.startAdvertising();
+
+    setState(() {
+      _identity = id;
+      _trustStore = trust;
+      _sessionServer = server;
+      _discoveryManager = discovery;
+      _injectClient = inject;
+      _isAdvertising = true;
+    });
+  }
+
+  void _showPairingPromptDialog(PairingPromptRequest prompt) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          backgroundColor: AirTheme.gray900,
+          title: const Text('PAIRING REQUEST'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'A mobile device is requesting permission to control this desktop:',
+                style: TextStyle(color: AirTheme.gray100, fontSize: AirpadTokens.fontBody),
+              ),
+              const SizedBox(height: AirpadTokens.spacing16),
+              AirCard(
+                title: 'DEVICE DETAILS',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Alias: ${prompt.device.alias}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4.0),
+                    Text(
+                      'Fingerprint: ${prompt.device.shortFingerprint}',
+                      style: const TextStyle(fontFamily: 'monospace', color: AirTheme.gray500),
+                    ),
+                    if (prompt.device.ip != null) ...[
+                      const SizedBox(height: 4.0),
+                      Text('IP: ${prompt.device.ip}', style: const TextStyle(color: AirTheme.gray500)),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AirpadTokens.spacing16),
+              AirCodeBox(code: prompt.code),
+              const SizedBox(height: AirpadTokens.spacing12),
+              const Text(
+                'Verify that this 6-digit code matches the code on your phone.',
+                style: TextStyle(color: AirTheme.gray500, fontSize: AirpadTokens.fontCaption),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            AirButton(
+              label: 'REJECT',
+              variant: AirButtonVariant.outline,
+              onPressed: () {
+                prompt.reject();
+                Navigator.of(dialogCtx).pop();
+              },
+            ),
+            AirButton(
+              label: 'PAIR & ALLOW',
+              variant: AirButtonVariant.primary,
+              onPressed: () {
+                prompt.accept();
+                Navigator.of(dialogCtx).pop();
+                setState(() {});
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showQrCodeDialog() {
+    final server = _sessionServer;
+    final id = _identity;
+    if (server == null || id == null) return;
+
+    final code = server.createQrPairingCode();
+    final qrString = PairingCodeHelper.generateQrString(
+      ip: _localIp,
+      port: AirpadProtocolDefaults.port,
+      fingerprint: id.fingerprint,
+      code: code,
+      alias: id.alias,
+    );
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          backgroundColor: AirTheme.gray900,
+          title: const Text('PAIR VIA QR CODE'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(12.0),
+                child: QrImageView(
+                  data: qrString,
+                  version: QrVersions.auto,
+                  size: 220.0,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: AirpadTokens.spacing16),
+              AirCodeBox(code: code, label: 'ONE-TIME CODE'),
+              const SizedBox(height: AirpadTokens.spacing12),
+              const Text(
+                'Open the Airpad mobile app and tap "Scan QR". Valid for 5 minutes.',
+                style: TextStyle(color: AirTheme.gray500, fontSize: AirpadTokens.fontCaption),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            AirButton(
+              label: 'CLOSE',
+              variant: AirButtonVariant.outline,
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _sessionServer?.dispose();
+    _discoveryManager?.dispose();
+    _injectClient?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final id = _identity;
+    final trust = _trustStore;
+
+    final AirStatusType statusType = _activeController != null
+        ? AirStatusType.connected
+        : (_isAdvertising ? AirStatusType.advertising : AirStatusType.idle);
+
+    final statusLabel = _activeController != null
+        ? 'CONTROLLED BY ${_activeController!.alias.toUpperCase()}'
+        : (_isAdvertising ? 'ADVERTISING ON WI-FI' : 'OFFLINE');
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+        title: const Row(
           children: [
-            const Text('You have pushed the button this many times:'),
+            Text('AIRPAD'),
+            SizedBox(width: AirpadTokens.spacing8),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'RECEIVER',
+              style: TextStyle(
+                color: AirTheme.gray500,
+                fontSize: AirpadTokens.fontCaption,
+                letterSpacing: 2.0,
+              ),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(widget.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+            onPressed: widget.onToggleTheme,
+            tooltip: 'Toggle Theme',
+          ),
+          const SizedBox(width: AirpadTokens.spacing8),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      body: id == null
+          ? const Center(child: CircularProgressIndicator(color: AirTheme.white))
+          : ListView(
+              padding: const EdgeInsets.all(AirpadTokens.spacing24),
+              children: [
+                // Top Status Bar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    AirStatusBadge(type: statusType, customLabel: statusLabel),
+                    if (!_injectConnected)
+                      const AirStatusBadge(type: AirStatusType.error, customLabel: 'INPUT HELPER DISCONNECTED'),
+                  ],
+                ),
+                const SizedBox(height: AirpadTokens.spacing16),
+
+                // Active Session Controller Banner (Security Req #9)
+                if (_activeController != null) ...[
+                  AirCard(
+                    title: 'ACTIVE SESSION',
+                    trailing: AirButton(
+                      label: 'DISCONNECT',
+                      variant: AirButtonVariant.outline,
+                      onPressed: () => _sessionServer?.disconnectAll(),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Controlled by: ${_activeController!.alias}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: AirpadTokens.fontH2),
+                        ),
+                        const SizedBox(height: 4.0),
+                        Text(
+                          'Fingerprint: ${_activeController!.shortFingerprint} (${_activeController!.ip ?? 'LAN'})',
+                          style: const TextStyle(fontFamily: 'monospace', color: AirTheme.gray500),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AirpadTokens.spacing16),
+                ],
+
+                // Device Identity
+                AirCard(
+                  title: 'THIS DESKTOP DEVICE',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            id.alias,
+                            style: const TextStyle(fontSize: AirpadTokens.fontH2, fontWeight: FontWeight.bold),
+                          ),
+                          AirButton(
+                            label: 'PAIR VIA QR CODE',
+                            icon: const Icon(Icons.qr_code, size: 16.0),
+                            variant: AirButtonVariant.primary,
+                            onPressed: _showQrCodeDialog,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AirpadTokens.spacing8),
+                      Text(
+                        'Fingerprint: ${id.fingerprint}',
+                        style: const TextStyle(fontFamily: 'monospace', fontSize: 11.0, color: AirTheme.gray500),
+                      ),
+                      const SizedBox(height: 4.0),
+                      Text(
+                        'Listening Endpoint: $_localIp:${AirpadProtocolDefaults.port}',
+                        style: const TextStyle(color: AirTheme.gray500, fontSize: AirpadTokens.fontCaption),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AirpadTokens.spacing16),
+
+                // Trusted Devices (Security Req #4, #5)
+                AirCard(
+                  title: 'PAIRED & TRUSTED DEVICES',
+                  child: (trust == null || trust.trustedDevices.isEmpty)
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: AirpadTokens.spacing12),
+                          child: Text(
+                            'No paired devices yet. Scan the QR code or select this PC on the phone.',
+                            style: TextStyle(color: AirTheme.gray500),
+                          ),
+                        )
+                      : Column(
+                          children: trust.trustedDevices.map((dev) {
+                            return AirTile(
+                              title: dev.alias,
+                              subtitle: dev.shortFingerprint,
+                              trailing: AirButton(
+                                label: 'REVOKE',
+                                variant: AirButtonVariant.ghost,
+                                onPressed: () async {
+                                  await _sessionServer?.revokeDevice(dev.fingerprint);
+                                  setState(() {});
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                ),
+                const SizedBox(height: AirpadTokens.spacing16),
+
+                // Settings & Preferences
+                AirCard(
+                  title: 'SECURITY & SETTINGS',
+                  child: Column(
+                    children: [
+                      AirToggle(
+                        label: 'Ask confirmation every time a device connects',
+                        value: _askEveryTime,
+                        onChanged: (val) {
+                          setState(() {
+                            _askEveryTime = val;
+                            if (_sessionServer != null) {
+                              _sessionServer!.askEveryTime = val;
+                            }
+                          });
+                        },
+                      ),
+                      const Divider(color: AirTheme.gray700, height: AirpadTokens.spacing16),
+                      AirToggle(
+                        label: 'Auto-start on system login',
+                        value: _autoStart,
+                        onChanged: (val) {
+                          setState(() => _autoStart = val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

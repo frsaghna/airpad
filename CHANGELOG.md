@@ -51,7 +51,19 @@ All notable changes to the Airpad project will be documented in this file.
 - Enhanced `airpad-inject` in Rust with Linux Unicode hex input (`Ctrl+Shift+U <hex> Enter`) for non-ASCII/emoji characters and modifier key synchronization.
 - Verified Phase 5 acceptance criteria: typed full sentence, dispatched Ctrl+C / Ctrl+V / Alt+Tab shortcuts, and streamed Unicode / non-ASCII strings across TLS session.
 
-
-
-
-
+### Phase 6 — UX polish in black and white
+- Created shared Flutter package `packages/airpad_ui` strictly adhering to monochrome design system (zero hue, no gradients, no shadows, no blur):
+  - Inverted dark and light theme palettes (`AirTheme`).
+  - Shared widgets: `AirButton`, `AirCard`, `AirTile`, `AirToggle`, `AirCodeBox`, `AirStatusBadge`, and `AirTouchpadSurface`.
+- Built full desktop UI (`apps/desktop`):
+  - Device identity card, active controller banner with disconnect control, connection status badge.
+  - Interactive QR code dialog (`qr_flutter`) for instant out-of-band mobile pairing.
+  - Desktop pairing prompt dialog with 6-digit code verification.
+  - Trusted devices list with instant revocation.
+- Built full mobile UI (`apps/mobile`):
+  - `DiscoverScreen`: live receiver listing, status pills (`PAIRED` / `UNPAIRED`), pull-to-refresh, manual IP entry dialog, and camera QR code scanner.
+  - `PairingScreen`: 6-digit verification code display, target receiver details, and desktop confirmation waiting status.
+  - `ControllerScreen`: high-refresh `AirTouchpadSurface` with touch feedback rings, mouse buttons row, sticky modifier latches (Ctrl, Alt, Shift, Super) with visual inversion, quick navigation keys, shortcuts grid, function keys (F1-F12), and audio/media controls.
+  - `SettingsScreen`: device alias editing, sensitivity slider, natural scrolling, haptic feedback, wakelock screen awake toggle, theme switcher, and trusted receiver management with instant revocation.
+  - `QrScannerScreen`: monochrome viewfinder overlay with `mobile_scanner`.
+- Verified Phase 6 acceptance criteria: 0 non-gray pixels in UI chrome across desktop and mobile, full status distinguishable without color, comprehensive widget tests and screen tests passing across the monorepo.

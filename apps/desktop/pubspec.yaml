@@ -37,6 +37,9 @@ dependencies:
   tray_manager: ^0.8.0
   airpad_core:
     path: ../../packages/airpad_core
+  airpad_ui:
+    path: ../../packages/airpad_ui
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
