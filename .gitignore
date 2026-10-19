@@ -1,0 +1,25 @@
+# Dart & Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Rust
+target/
+Cargo.lock
+
+# Android
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/app/build/
+*.keystore
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.log
