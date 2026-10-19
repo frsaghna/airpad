@@ -210,7 +210,28 @@ impl VirtualInput {
                     Error::new(ErrorKind::InvalidInput, format!("Unknown key code: {code}"))
                 })?;
 
-                let val = match state.to_lowercase().as_str() {
+                match state.to_lowercase().as_str() {
+                    "press" | "click" => {
+                        let mut mod_keys = Vec::new();
+                        for m in mods {
+                            if let Some(m_key) = map_modifier_name(m) {
+                                if !self.pressed_keys.contains(&m_key) {
+                                    self.pressed_keys.insert(m_key);
+                                    self.device.emit(&[InputEvent::new(EventType::KEY.0, m_key.code(), 1)])?;
+                                    mod_keys.push(m_key);
+                                }
+                            }
+                        }
+                        self.pressed_keys.insert(key);
+                        self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), 1)])?;
+                        sleep(Duration::from_millis(20));
+                        self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), 0)])?;
+                        self.pressed_keys.remove(&key);
+                        for m_key in mod_keys {
+                            self.device.emit(&[InputEvent::new(EventType::KEY.0, m_key.code(), 0)])?;
+                            self.pressed_keys.remove(&m_key);
+                        }
+                    }
                     "down" => {
                         // Apply any modifier keys if not already pressed down
                         for m in mods {
@@ -222,11 +243,18 @@ impl VirtualInput {
                             }
                         }
                         self.pressed_keys.insert(key);
-                        1
+                        self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), 1)])?;
                     }
                     "up" => {
                         self.pressed_keys.remove(&key);
-                        0
+                        self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), 0)])?;
+                        for m in mods {
+                            if let Some(m_key) = map_modifier_name(m) {
+                                if self.pressed_keys.remove(&m_key) {
+                                    self.device.emit(&[InputEvent::new(EventType::KEY.0, m_key.code(), 0)])?;
+                                }
+                            }
+                        }
                     }
                     other => {
                         return Err(Error::new(
@@ -234,8 +262,7 @@ impl VirtualInput {
                             format!("Unknown key state: {other}"),
                         ))
                     }
-                };
-                self.device.emit(&[InputEvent::new(EventType::KEY.0, key.code(), val)])?;
+                }
             }
 
             ProtocolEvent::Text { value } => {
@@ -563,5 +590,19 @@ mod tests {
         assert_eq!(map_modifier_name("shift"), Some(KeyCode::KEY_LEFTSHIFT));
         assert_eq!(map_modifier_name("meta"), Some(KeyCode::KEY_LEFTMETA));
         assert_eq!(map_modifier_name("unknown"), None);
+    }
+
+    #[test]
+    fn test_parse_key_event() {
+        let json_str = r#"{"type":"key","code":"Tab","state":"press","mods":["super","shift"]}"#;
+        let event: ProtocolEvent = serde_json::from_str(json_str).unwrap();
+        assert_eq!(
+            event,
+            ProtocolEvent::Key {
+                code: "Tab".into(),
+                state: "press".into(),
+                mods: vec!["super".into(), "shift".into()]
+            }
+        );
     }
 }

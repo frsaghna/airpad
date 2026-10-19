@@ -165,5 +165,103 @@ void main() {
 
       processor.dispose();
     });
+
+    test('three finger swipe left emits Super + Tab', () {
+      final events = <AirpadEvent>[];
+      SwipeDirection? detectedDir;
+      final processor = TouchpadProcessor(
+        onEvent: events.add,
+        onThreeFingerSwipe: (dir) => detectedDir = dir,
+      );
+
+      processor.onPointerDown(0, 100.0, 100.0);
+      processor.onPointerDown(1, 130.0, 100.0);
+      processor.onPointerDown(2, 160.0, 100.0);
+
+      // Swipe left by 50px
+      processor.onPointerMove(0, 50.0, 100.0, -50.0, 0.0);
+      processor.onPointerMove(1, 80.0, 100.0, -50.0, 0.0);
+      processor.onPointerMove(2, 110.0, 100.0, -50.0, 0.0);
+
+      expect(detectedDir, equals(SwipeDirection.left));
+      final keyEvents = events.whereType<KeyEvent>().toList();
+      expect(keyEvents.isNotEmpty, isTrue);
+      expect(keyEvents.first.code, equals('Tab'));
+      expect(keyEvents.first.mods, equals(['super']));
+
+      // Release fingers should NOT trigger middle click
+      processor.onPointerUp(0, 50.0, 100.0);
+      processor.onPointerUp(1, 80.0, 100.0);
+      processor.onPointerUp(2, 110.0, 100.0);
+
+      expect(events.whereType<ClickEvent>().isEmpty, isTrue);
+
+      processor.dispose();
+    });
+
+    test('three finger swipe right emits Super + Shift + Tab', () {
+      final events = <AirpadEvent>[];
+      SwipeDirection? detectedDir;
+      final processor = TouchpadProcessor(
+        onEvent: events.add,
+        onThreeFingerSwipe: (dir) => detectedDir = dir,
+      );
+
+      processor.onPointerDown(0, 100.0, 100.0);
+      processor.onPointerDown(1, 130.0, 100.0);
+      processor.onPointerDown(2, 160.0, 100.0);
+
+      // Swipe right by 50px
+      processor.onPointerMove(0, 150.0, 100.0, 50.0, 0.0);
+      processor.onPointerMove(1, 180.0, 100.0, 50.0, 0.0);
+      processor.onPointerMove(2, 210.0, 100.0, 50.0, 0.0);
+
+      expect(detectedDir, equals(SwipeDirection.right));
+      final keyEvents = events.whereType<KeyEvent>().toList();
+      expect(keyEvents.isNotEmpty, isTrue);
+      expect(keyEvents.first.code, equals('Tab'));
+      expect(keyEvents.first.mods, equals(['super', 'shift']));
+
+      processor.dispose();
+    });
+
+    test('three finger swipe up and down emit corresponding shortcuts', () {
+      final events = <AirpadEvent>[];
+      SwipeDirection? detectedDir;
+      final processor = TouchpadProcessor(
+        onEvent: events.add,
+        onThreeFingerSwipe: (dir) => detectedDir = dir,
+      );
+
+      // Swipe Up
+      processor.onPointerDown(0, 100.0, 100.0);
+      processor.onPointerDown(1, 130.0, 100.0);
+      processor.onPointerDown(2, 160.0, 100.0);
+      processor.onPointerMove(0, 100.0, 50.0, 0.0, -50.0);
+      processor.onPointerMove(1, 130.0, 50.0, 0.0, -50.0);
+      processor.onPointerMove(2, 160.0, 50.0, 0.0, -50.0);
+
+      expect(detectedDir, equals(SwipeDirection.up));
+      expect(events.whereType<KeyEvent>().last.code, equals('Space'));
+      expect(events.whereType<KeyEvent>().last.mods, equals(['super']));
+
+      processor.onPointerUp(0, 100.0, 50.0);
+      processor.onPointerUp(1, 130.0, 50.0);
+      processor.onPointerUp(2, 160.0, 50.0);
+
+      // Swipe Down
+      processor.onPointerDown(0, 100.0, 100.0);
+      processor.onPointerDown(1, 130.0, 100.0);
+      processor.onPointerDown(2, 160.0, 100.0);
+      processor.onPointerMove(0, 100.0, 150.0, 0.0, 50.0);
+      processor.onPointerMove(1, 130.0, 150.0, 0.0, 50.0);
+      processor.onPointerMove(2, 160.0, 150.0, 0.0, 50.0);
+
+      expect(detectedDir, equals(SwipeDirection.down));
+      expect(events.whereType<KeyEvent>().last.code, equals('s'));
+      expect(events.whereType<KeyEvent>().last.mods, equals(['super']));
+
+      processor.dispose();
+    });
   });
 }

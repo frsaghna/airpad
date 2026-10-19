@@ -45,6 +45,7 @@ class MobileServices extends ChangeNotifier {
   // Settings
   double _sensitivity = 1.0;
   bool _naturalScroll = true;
+  bool _threeFingerSwipes = true;
   bool _hapticsEnabled = true;
   bool _keepScreenOn = true;
   bool _isDark = true;
@@ -61,6 +62,7 @@ class MobileServices extends ChangeNotifier {
 
   double get sensitivity => _sensitivity;
   bool get naturalScroll => _naturalScroll;
+  bool get threeFingerSwipes => _threeFingerSwipes;
   bool get hapticsEnabled => _hapticsEnabled;
   bool get keepScreenOn => _keepScreenOn;
   bool get isDark => _isDark;
@@ -106,8 +108,14 @@ class MobileServices extends ChangeNotifier {
     _touchpadProcessor = TouchpadProcessor(
       sensitivity: _sensitivity,
       naturalScroll: _naturalScroll,
+      threeFingerSwipesEnabled: _threeFingerSwipes,
       onEvent: (event) {
         _sessionClient.sendEvent(event);
+      },
+      onThreeFingerSwipe: (dir) {
+        if (_hapticsEnabled) {
+          HapticFeedback.mediumImpact();
+        }
       },
     );
 
@@ -165,6 +173,7 @@ class MobileServices extends ChangeNotifier {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         _sensitivity = (map['sensitivity'] as num?)?.toDouble() ?? 1.0;
         _naturalScroll = map['naturalScroll'] as bool? ?? true;
+        _threeFingerSwipes = map['threeFingerSwipes'] as bool? ?? true;
         _hapticsEnabled = map['hapticsEnabled'] as bool? ?? true;
         _keepScreenOn = map['keepScreenOn'] as bool? ?? true;
         _isDark = map['isDark'] as bool? ?? true;
@@ -178,6 +187,7 @@ class MobileServices extends ChangeNotifier {
       final map = {
         'sensitivity': _sensitivity,
         'naturalScroll': _naturalScroll,
+        'threeFingerSwipes': _threeFingerSwipes,
         'hapticsEnabled': _hapticsEnabled,
         'keepScreenOn': _keepScreenOn,
         'isDark': _isDark,
@@ -196,6 +206,13 @@ class MobileServices extends ChangeNotifier {
   Future<void> setNaturalScroll(bool value) async {
     _naturalScroll = value;
     _touchpadProcessor.naturalScroll = value;
+    await _saveSettings();
+    notifyListeners();
+  }
+
+  Future<void> setThreeFingerSwipes(bool value) async {
+    _threeFingerSwipes = value;
+    _touchpadProcessor.threeFingerSwipesEnabled = value;
     await _saveSettings();
     notifyListeners();
   }

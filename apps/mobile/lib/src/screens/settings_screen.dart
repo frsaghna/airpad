@@ -202,6 +202,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 12),
 
+                    // 3-Finger Gestures Toggle
+                    AirToggle(
+                      label: '3-Finger Swipes (Workspaces & Menu)',
+                      value: widget.services.threeFingerSwipes,
+                      onChanged: (val) {
+                        widget.services.setThreeFingerSwipes(val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
                     // Haptic Feedback Toggle
                     AirToggle(
                       label: 'Haptic Feedback',

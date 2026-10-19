@@ -24,17 +24,28 @@ class _TouchPoint {
       sqrt(pow(currentX - startX, 2) + pow(currentY - startY, 2));
 }
 
+/// Direction for multi-finger swipe gestures.
+enum SwipeDirection {
+  left,
+  right,
+  up,
+  down,
+}
+
 /// Gesture recognizer and processor converting multi-touch raw pointer events
-/// into Airpad protocol events (move, scroll, clicks, drag).
+/// into Airpad protocol events (move, scroll, clicks, drag, and swipes).
 class TouchpadProcessor {
   TouchpadProcessor({
     this.sensitivity = 1.0,
     this.naturalScroll = true,
     this.accelerationEnabled = true,
+    this.threeFingerSwipesEnabled = true,
+    this.swipeThreshold = 45.0,
     this.moveSlop = 6.0,
     this.tapThreshold = const Duration(milliseconds: 250),
     this.doubleTapInterval = const Duration(milliseconds: 250),
     void Function(AirpadEvent)? onEvent,
+    this.onThreeFingerSwipe,
   }) : _onEvent = onEvent {
     _coalescer = MoveCoalescer(
       onEvent: (move) => _emitEvent(move),
@@ -44,15 +55,19 @@ class TouchpadProcessor {
   double sensitivity;
   bool naturalScroll;
   bool accelerationEnabled;
+  bool threeFingerSwipesEnabled;
+  final double swipeThreshold;
   final double moveSlop;
   final Duration tapThreshold;
   final Duration doubleTapInterval;
   final void Function(AirpadEvent)? _onEvent;
+  final void Function(SwipeDirection direction)? onThreeFingerSwipe;
 
   late final MoveCoalescer _coalescer;
   final Map<int, _TouchPoint> _activeTouches = {};
   int _maxFingersSeen = 0;
   bool _isDragging = false;
+  bool _threeFingerSwipeFired = false;
   DateTime? _lastTapTime;
   double _lastTapX = 0.0;
   double _lastTapY = 0.0;
@@ -132,6 +147,68 @@ class TouchpadProcessor {
         );
         _emitEvent(event);
       }
+    } else if (_activeTouches.length == 3 && threeFingerSwipesEnabled) {
+      if (!_threeFingerSwipeFired) {
+        double avgDx = 0.0;
+        double avgDy = 0.0;
+        for (final tp in _activeTouches.values) {
+          avgDx += (tp.currentX - tp.startX);
+          avgDy += (tp.currentY - tp.startY);
+        }
+        avgDx /= _activeTouches.length;
+        avgDy /= _activeTouches.length;
+
+        if (avgDx.abs() >= swipeThreshold || avgDy.abs() >= swipeThreshold) {
+          _threeFingerSwipeFired = true;
+          final SwipeDirection direction;
+          if (avgDx.abs() > avgDy.abs()) {
+            direction = avgDx < 0 ? SwipeDirection.left : SwipeDirection.right;
+          } else {
+            direction = avgDy < 0 ? SwipeDirection.up : SwipeDirection.down;
+          }
+          _handleThreeFingerSwipe(direction);
+        }
+      }
+    }
+  }
+
+  void _handleThreeFingerSwipe(SwipeDirection direction) {
+    onThreeFingerSwipe?.call(direction);
+
+    // Default Linux / Hyprland shortcut mappings:
+    // Swipe Left  -> Next Workspace: Super + Tab
+    // Swipe Right -> Previous Workspace: Super + Shift + Tab
+    // Swipe Up    -> Launcher / Omarchy Menu: Super + Space
+    // Swipe Down  -> Scratchpad / Show Desktop: Super + S
+    switch (direction) {
+      case SwipeDirection.left:
+        _emitEvent(const KeyEvent(
+          code: 'Tab',
+          state: KeyState.press,
+          mods: ['super'],
+        ));
+        break;
+      case SwipeDirection.right:
+        _emitEvent(const KeyEvent(
+          code: 'Tab',
+          state: KeyState.press,
+          mods: ['super', 'shift'],
+        ));
+        break;
+      case SwipeDirection.up:
+        _emitEvent(const KeyEvent(
+          code: 'Space',
+          state: KeyState.press,
+          mods: ['super'],
+        ));
+        break;
+      case SwipeDirection.down:
+        _emitEvent(const KeyEvent(
+          code: 's',
+          state: KeyState.press,
+          mods: ['super'],
+        ));
+        break;
     }
   }
 
@@ -160,7 +237,9 @@ class TouchpadProcessor {
       _coalescer.flush();
       final duration = now.difference(point.time);
 
-      if (point.totalDisplacement <= moveSlop && duration <= tapThreshold) {
+      if (!_threeFingerSwipeFired &&
+          point.totalDisplacement <= moveSlop &&
+          duration <= tapThreshold) {
         if (_maxFingersSeen == 1) {
           if (wasDragging ||
               (_lastTapTime != null && now.difference(_lastTapTime!) <= doubleTapInterval)) {
@@ -184,6 +263,7 @@ class TouchpadProcessor {
       } else if (wasDragging) {
         _lastTapTime = null;
       }
+      _threeFingerSwipeFired = false;
       _maxFingersSeen = 0;
     }
   }
@@ -200,6 +280,7 @@ class TouchpadProcessor {
     }
     if (_activeTouches.isEmpty) {
       _coalescer.flush();
+      _threeFingerSwipeFired = false;
       _maxFingersSeen = 0;
     }
   }
@@ -214,6 +295,7 @@ class TouchpadProcessor {
       ));
     }
     _activeTouches.clear();
+    _threeFingerSwipeFired = false;
     _maxFingersSeen = 0;
     _lastTapTime = null;
   }

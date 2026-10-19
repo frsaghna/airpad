@@ -42,10 +42,11 @@ enum ButtonState {
   }
 }
 
-/// Up or down state for keyboard keys.
+/// Up, down, or single-press state for keyboard keys.
 enum KeyState {
   down,
-  up;
+  up,
+  press;
 
   String toJson() => name;
 
@@ -55,6 +56,9 @@ enum KeyState {
         return KeyState.down;
       case 'up':
         return KeyState.up;
+      case 'press':
+      case 'click':
+        return KeyState.press;
       default:
         throw ArgumentError.value(value, 'state', 'Unknown key state');
     }
