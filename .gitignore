@@ -26,3 +26,4 @@ apps/mobile/android/app/build/
 
 # Distribution & Release Artifacts
 dist/
+airpad-linux-x86_64/
