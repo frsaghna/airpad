@@ -31,4 +31,12 @@ All notable changes to the Airpad project will be documented in this file.
 - Implemented `DiscoveryManager` providing unified live tracking of active receivers and automatic expiration.
 - Verified Phase 2 acceptance criteria: phone discovers desktop in < 50ms, HTTP fallback works when multicast is unavailable, and self-discovery is filtered out.
 
+### Phase 3 — Secure session and pairing
+- Implemented `TrustStore` with in-memory and persistent JSON storage of trusted device certificates.
+- Implemented `PairingCodeHelper` and `QrPairingPayload` supporting 6-digit codes and `airpad://v1` QR codes.
+- Implemented `TlsSessionServer` providing TLS WebSocket server at `wss://<ip>:53318/v1/session` with 6-digit pairing prompt, desktop confirmation, single active session enforcement, heartbeat monitor, and instant revocation.
+- Implemented `TlsSessionClient` with strict certificate pinning, automatic reconnection, QR code pairing, and heartbeat ping.
+- Verified Phase 3 acceptance criteria: unpaired devices rejected, paired devices reconnect automatically, revoking device disconnects immediately with close code 4401, rogue devices cannot hijack trusted slots, and QR pairing connects out-of-band.
+
+
 
