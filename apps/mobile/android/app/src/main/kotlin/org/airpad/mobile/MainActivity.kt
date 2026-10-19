@@ -1,4 +1,4 @@
-package com.example.mobile
+package org.airpad.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

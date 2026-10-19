@@ -139,11 +139,19 @@ class MobileServices extends ChangeNotifier {
       localDevice: localDevice,
     );
 
-    await _discoveryManager.startDiscovery();
+    try {
+      await _discoveryManager.startDiscovery();
+    } catch (e) {
+      debugPrint('[AirpadMobile] Warning: Discovery failed to start: $e');
+    }
 
     // Apply initial wakelock
     if (_keepScreenOn) {
-      await WakelockPlus.enable();
+      try {
+        await WakelockPlus.enable();
+      } catch (e) {
+        debugPrint('[AirpadMobile] Warning: Wakelock enable failed: $e');
+      }
     }
 
     _isInitialized = true;
