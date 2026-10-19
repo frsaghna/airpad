@@ -1,0 +1,45 @@
+# Maintainer: Kimmi <kimmi@local>
+pkgname=airpad-git
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Wireless Android touchpad and keyboard for Linux desktop (Wayland/X11)"
+arch=('x86_64')
+url="https://github.com/localkm/airpad"
+license=('MIT')
+depends=('gtk3' 'libepoxy')
+makedepends=('git' 'rust' 'cargo' 'flutter')
+provides=('airpad' 'airpad-inject')
+conflicts=('airpad')
+
+build() {
+  cd "$srcdir"
+  # Build Rust uinput injector helper
+  cd helper/airpad-inject
+  cargo build --release
+
+  # Build Flutter desktop application
+  cd ../../apps/desktop
+  flutter build linux --release
+}
+
+package() {
+  # 1. Install binaries
+  install -Dm755 "$srcdir/helper/airpad-inject/target/release/airpad-inject" "$pkgdir/usr/bin/airpad-inject"
+  install -Dm755 "$srcdir/helper/airpad-inject/target/release/airpad-test-cli" "$pkgdir/usr/bin/airpad-test-cli"
+  install -Dm755 "$srcdir/apps/desktop/build/linux/x64/release/bundle/desktop" "$pkgdir/usr/bin/airpad"
+
+  # 2. Install shared libraries and data
+  mkdir -p "$pkgdir/usr/lib/airpad"
+  cp -r "$srcdir/apps/desktop/build/linux/x64/release/bundle/lib"/* "$pkgdir/usr/lib/airpad/"
+  mkdir -p "$pkgdir/usr/share/airpad"
+  cp -r "$srcdir/apps/desktop/build/linux/x64/release/bundle/data" "$pkgdir/usr/share/airpad/"
+
+  # 3. Install udev rule for /dev/uinput
+  install -Dm644 "$srcdir/helper/airpad-inject/udev/99-airpad-uinput.rules" "$pkgdir/usr/lib/udev/rules.d/99-airpad-uinput.rules"
+
+  # 4. Install systemd user service
+  install -Dm644 "$srcdir/helper/airpad-inject/systemd/airpad-inject.service" "$pkgdir/usr/lib/systemd/user/airpad-inject.service"
+
+  # 5. Install desktop launcher
+  install -Dm644 "$srcdir/dist/airpad-linux-x86_64/airpad.desktop" "$pkgdir/usr/share/applications/airpad.desktop"
+}

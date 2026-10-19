@@ -23,3 +23,6 @@ apps/mobile/android/app/build/
 .vscode/
 .DS_Store
 *.log
+
+# Distribution & Release Artifacts
+dist/

@@ -31,6 +31,34 @@ class PairingPromptRequest {
   }
 }
 
+/// Token bucket rate limiter preventing flood DOS attacks (Security Req #7).
+class RateLimiter {
+  RateLimiter({
+    this.maxPerSecond = 240,
+    this.burstCapacity = 60,
+  })  : _tokens = burstCapacity.toDouble(),
+        _lastCheck = DateTime.now();
+
+  final int maxPerSecond;
+  final int burstCapacity;
+  double _tokens;
+  DateTime _lastCheck;
+
+  bool tryAcquire() {
+    final now = DateTime.now();
+    final elapsedMs = now.difference(_lastCheck).inMilliseconds;
+    _lastCheck = now;
+
+    _tokens = (_tokens + elapsedMs * (maxPerSecond / 1000.0))
+        .clamp(0.0, burstCapacity.toDouble());
+    if (_tokens >= 1.0) {
+      _tokens -= 1.0;
+      return true;
+    }
+    return false;
+  }
+}
+
 /// TLS WebSocket server hosted by the Linux desktop receiver.
 class TlsSessionServer {
   TlsSessionServer({
@@ -118,6 +146,7 @@ class TlsSessionServer {
   void _handleWebSocketConnection(WebSocket socket, String? remoteIp) {
     var isAuthenticated = false;
     AirpadDevice? remoteDevice;
+    final rateLimiter = RateLimiter(maxPerSecond: 240, burstCapacity: 60);
 
     _lastPingTime = DateTime.now();
 
@@ -135,6 +164,12 @@ class TlsSessionServer {
         _lastPingTime = DateTime.now();
         final rawStr = message.toString().trim();
         if (rawStr.isEmpty) return;
+
+        // Security Req #7: Validate and bound payload size (max 8KB)
+        if (rawStr.length > 8192) return;
+
+        // Security Req #7: Rate limit incoming events (max 240/sec)
+        if (!rateLimiter.tryAcquire()) return;
 
         // 1. Handle heartbeat ping
         if (rawStr == 'ping' || rawStr == '{"type":"ping"}') {

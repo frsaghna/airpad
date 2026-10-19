@@ -73,6 +73,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if trimmed.is_empty() {
                                 continue;
                             }
+                            if trimmed.len() > 8192 {
+                                eprintln!("[airpad-inject] Dropping oversized input event ({} bytes)", trimmed.len());
+                                continue;
+                            }
                             match serde_json::from_str::<ProtocolEvent>(trimmed) {
                                 Ok(event) => {
                                     if let Err(e) = virtual_input.handle_event(&event) {

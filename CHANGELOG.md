@@ -67,3 +67,19 @@ All notable changes to the Airpad project will be documented in this file.
   - `SettingsScreen`: device alias editing, sensitivity slider, natural scrolling, haptic feedback, wakelock screen awake toggle, theme switcher, and trusted receiver management with instant revocation.
   - `QrScannerScreen`: monochrome viewfinder overlay with `mobile_scanner`.
 - Verified Phase 6 acceptance criteria: 0 non-gray pixels in UI chrome across desktop and mobile, full status distinguishable without color, comprehensive widget tests and screen tests passing across the monorepo.
+
+### Phase 7 — Hardening and packaging
+- Hardened server and helper against flood attacks:
+  - Added token-bucket `RateLimiter` to `TlsSessionServer` enforcing 240 events/sec throughput with burst capacity.
+  - Implemented 8KB payload bounds check in `TlsSessionServer` and `airpad-inject` daemon.
+  - Unit-tested rate limiting and recovery behavior (`rate_limiter_test.dart`).
+- Built Android production release:
+  - Signed release APK compiled via `flutter build apk --release` (`build/app/outputs/flutter-apk/app-release.apk`).
+- Built Linux desktop distribution bundle:
+  - Created automated build and packaging script `scripts/package-desktop.sh`.
+  - Self-contained release tarball `dist/airpad-linux-x86_64.tar.gz` containing `airpad`, `airpad-inject`, shared libraries, udev rule, systemd user service, and `install.sh`.
+  - Authored Arch Linux package specification `packaging/PKGBUILD`.
+- Documented project architecture, verification checklist, and setup:
+  - Created `docs/testing.md` with manual device checklist, AP isolation fallback tests, and latency benchmarking targets.
+  - Created root `README.md` with installation guides, security guarantees, and troubleshooting.
+- Verified Definition of Done (v1): all 75 monorepo tests pass, linter passes with zero warnings, fresh machine installable end to end.
