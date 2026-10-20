@@ -32,6 +32,7 @@ class PairingScreen extends StatelessWidget {
           });
         }
 
+        final colors = AirColors.of(context);
         final isRejected = state is SessionRejected;
 
         return Scaffold(
@@ -64,14 +65,14 @@ class PairingScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'DESKTOP RECEIVER',
                           style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.0,
-                            color: AirTheme.gray500,
+                            color: colors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -85,10 +86,10 @@ class PairingScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           'FP: ${desktopFingerprint.length > 20 ? '${desktopFingerprint.substring(0, 20)}...' : desktopFingerprint}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
-                            color: AirTheme.gray500,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
@@ -101,7 +102,7 @@ class PairingScreen extends StatelessWidget {
                     AirCard(
                       child: Column(
                         children: [
-                          const Icon(Icons.block_outlined, size: 40, color: AirTheme.white),
+                          Icon(Icons.block_outlined, size: 40, color: colors.textPrimary),
                           const SizedBox(height: 12),
                           const Text(
                             'PAIRING REJECTED',
@@ -114,7 +115,7 @@ class PairingScreen extends StatelessWidget {
                           const SizedBox(height: 6),
                           Text(
                             state.reason,
-                            style: const TextStyle(color: AirTheme.gray500),
+                            style: TextStyle(color: colors.textSecondary),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -137,12 +138,12 @@ class PairingScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'A pairing dialog has appeared on your desktop receiver. Verify that the 6-digit code matches and click "Confirm" to grant input control.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
-                        color: AirTheme.gray500,
+                        color: colors.textSecondary,
                         height: 1.4,
                       ),
                     ),

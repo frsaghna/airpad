@@ -17,9 +17,16 @@ class AirToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trackColor = value ? AirTheme.white : AirTheme.black;
-    final thumbColor = value ? AirTheme.black : AirTheme.gray500;
-    final borderColor = value ? AirTheme.white : AirTheme.gray500;
+    final colors = AirColors.of(context);
+    final trackColor = value
+        ? colors.activeFill
+        : (colors.isDark ? AirTheme.black : const Color(0xFFE4E4E7));
+    final thumbColor = value
+        ? colors.onActiveFill
+        : (colors.isDark ? AirTheme.gray500 : const Color(0xFF888888));
+    final borderColor = value
+        ? colors.activeFill
+        : (colors.isDark ? AirTheme.gray700 : const Color(0xFFD4D4D8));
 
     final toggleWidget = GestureDetector(
       onTap: onChanged != null ? () => onChanged!(!value) : null,
@@ -55,8 +62,8 @@ class AirToggle extends StatelessWidget {
             children: [
               Text(
                 label!,
-                style: const TextStyle(
-                  color: AirTheme.white,
+                style: TextStyle(
+                  color: colors.textPrimary,
                   fontSize: AirpadTokens.fontBody,
                 ),
               ),

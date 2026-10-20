@@ -168,8 +168,9 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) {
+        final dialogColors = AirColors.of(dialogCtx);
         return AlertDialog(
-          backgroundColor: AirTheme.gray900,
+          backgroundColor: dialogColors.cardBg,
           title: const Text('PAIRING REQUEST'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -177,7 +178,7 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
             children: [
               Text(
                 'A mobile device is requesting permission to control this desktop:',
-                style: TextStyle(color: AirTheme.gray100, fontSize: AirpadTokens.fontBody),
+                style: TextStyle(color: dialogColors.textPrimary, fontSize: AirpadTokens.fontBody),
               ),
               const SizedBox(height: AirpadTokens.spacing16),
               AirCard(
@@ -189,11 +190,11 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
                     const SizedBox(height: 4.0),
                     Text(
                       'Fingerprint: ${prompt.device.shortFingerprint}',
-                      style: const TextStyle(fontFamily: 'monospace', color: AirTheme.gray500),
+                      style: TextStyle(fontFamily: 'monospace', color: dialogColors.textSecondary),
                     ),
                     if (prompt.device.ip != null) ...[
                       const SizedBox(height: 4.0),
-                      Text('IP: ${prompt.device.ip}', style: const TextStyle(color: AirTheme.gray500)),
+                      Text('IP: ${prompt.device.ip}', style: TextStyle(color: dialogColors.textSecondary)),
                     ],
                   ],
                 ),
@@ -201,9 +202,9 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
               const SizedBox(height: AirpadTokens.spacing16),
               AirCodeBox(code: prompt.code),
               const SizedBox(height: AirpadTokens.spacing12),
-              const Text(
+              Text(
                 'Verify that this 6-digit code matches the code on your phone.',
-                style: TextStyle(color: AirTheme.gray500, fontSize: AirpadTokens.fontCaption),
+                style: TextStyle(color: dialogColors.textSecondary, fontSize: AirpadTokens.fontCaption),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -249,28 +250,41 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) {
+        final dialogColors = AirColors.of(dialogCtx);
         return AlertDialog(
-          backgroundColor: AirTheme.gray900,
+          backgroundColor: dialogColors.cardBg,
           title: const Text('PAIR VIA QR CODE'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                color: Colors.white,
                 padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
+                  border: Border.all(color: dialogColors.border),
+                ),
                 child: QrImageView(
                   data: qrString,
                   version: QrVersions.auto,
                   size: 220.0,
                   backgroundColor: Colors.white,
+                  dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: Colors.black,
+                  ),
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: Colors.black,
+                  ),
                 ),
               ),
               const SizedBox(height: AirpadTokens.spacing16),
               AirCodeBox(code: code, label: 'ONE-TIME CODE'),
               const SizedBox(height: AirpadTokens.spacing12),
-              const Text(
+              Text(
                 'Open the Airpad mobile app and tap "Scan QR". Valid for 5 minutes.',
-                style: TextStyle(color: AirTheme.gray500, fontSize: AirpadTokens.fontCaption),
+                style: TextStyle(color: dialogColors.textSecondary, fontSize: AirpadTokens.fontCaption),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -297,6 +311,7 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     final id = _identity;
     final trust = _trustStore;
 
@@ -310,14 +325,14 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            Text('AIRPAD'),
-            SizedBox(width: AirpadTokens.spacing8),
+            const Text('AIRPAD'),
+            const SizedBox(width: AirpadTokens.spacing8),
             Text(
               'RECEIVER',
               style: TextStyle(
-                color: AirTheme.gray500,
+                color: colors.textSecondary,
                 fontSize: AirpadTokens.fontCaption,
                 letterSpacing: 2.0,
               ),
@@ -330,11 +345,16 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
             onPressed: widget.onToggleTheme,
             tooltip: 'Toggle Theme',
           ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            onPressed: () => exit(0),
+            tooltip: 'Close Airpad',
+          ),
           const SizedBox(width: AirpadTokens.spacing8),
         ],
       ),
       body: id == null
-          ? const Center(child: CircularProgressIndicator(color: AirTheme.white))
+          ? Center(child: CircularProgressIndicator(color: colors.activeFill))
           : ListView(
               padding: const EdgeInsets.all(AirpadTokens.spacing24),
               children: [
@@ -368,7 +388,7 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
                         const SizedBox(height: 4.0),
                         Text(
                           'Fingerprint: ${_activeController!.shortFingerprint} (${_activeController!.ip ?? 'LAN'})',
-                          style: const TextStyle(fontFamily: 'monospace', color: AirTheme.gray500),
+                          style: TextStyle(fontFamily: 'monospace', color: colors.textSecondary),
                         ),
                       ],
                     ),
@@ -400,12 +420,12 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
                       const SizedBox(height: AirpadTokens.spacing8),
                       Text(
                         'Fingerprint: ${id.fingerprint}',
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 11.0, color: AirTheme.gray500),
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 11.0, color: colors.textSecondary),
                       ),
                       const SizedBox(height: 4.0),
                       Text(
                         'Listening Endpoint: $_localIp:${AirpadProtocolDefaults.port}',
-                        style: const TextStyle(color: AirTheme.gray500, fontSize: AirpadTokens.fontCaption),
+                        style: TextStyle(color: colors.textSecondary, fontSize: AirpadTokens.fontCaption),
                       ),
                     ],
                   ),
@@ -416,11 +436,11 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
                 AirCard(
                   title: 'PAIRED & TRUSTED DEVICES',
                   child: (trust == null || trust.trustedDevices.isEmpty)
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: AirpadTokens.spacing12),
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AirpadTokens.spacing12),
                           child: Text(
                             'No paired devices yet. Scan the QR code or select this PC on the phone.',
-                            style: TextStyle(color: AirTheme.gray500),
+                            style: TextStyle(color: colors.textSecondary),
                           ),
                         )
                       : Column(
@@ -459,7 +479,7 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
                           });
                         },
                       ),
-                      const Divider(color: AirTheme.gray700, height: AirpadTokens.spacing16),
+                      Divider(color: colors.border, height: AirpadTokens.spacing16),
                       AirToggle(
                         label: 'Auto-start on system login',
                         value: _autoStart,

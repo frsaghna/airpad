@@ -213,6 +213,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     return ListenableBuilder(
       listenable: widget.services,
       builder: (context, _) {
+        final colors = AirColors.of(context);
         final id = widget.services.identity;
         final shortFp = id.fingerprint.length > 12 ? id.fingerprint.substring(0, 12) : id.fingerprint;
 
@@ -231,10 +232,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
                 Text(
                   '${id.alias.toUpperCase()} ($shortFp...)',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 10,
-                    color: AirTheme.gray500,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -269,7 +270,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 // Live Status Header Banner
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  color: AirTheme.gray900,
+                  color: colors.cardBg,
                   child: Row(
                     children: [
                       const AirStatusBadge(
@@ -277,7 +278,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         customLabel: 'SCANNING',
                       ),
                       const SizedBox(width: 10),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'LAN DISCOVERY (MULTICAST + HTTP)',
                           style: TextStyle(
@@ -285,17 +286,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
-                            color: AirTheme.gray500,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
                       if (_isConnecting)
-                        const SizedBox(
+                        SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(AirTheme.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(colors.activeFill),
                           ),
                         ),
                     ],
@@ -312,8 +313,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
                       if (devices.isEmpty) {
                         return RefreshIndicator(
-                          color: AirTheme.white,
-                          backgroundColor: AirTheme.black,
+                          color: colors.activeFill,
+                          backgroundColor: colors.bg,
                           onRefresh: () async {
                             await widget.services.discoveryManager.scanSubnetNow();
                           },
@@ -322,10 +323,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             padding: const EdgeInsets.all(24.0),
                             children: [
                               const SizedBox(height: 60),
-                              const Icon(
+                              Icon(
                                 Icons.wifi_tethering_outlined,
                                 size: 56,
-                                color: AirTheme.gray500,
+                                color: colors.textSecondary,
                               ),
                               const SizedBox(height: 20),
                               const Text(
@@ -339,22 +340,22 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              const Text(
+                              Text(
                                 'Ensure the AIRPAD desktop app is running on your PC and connected to the same Wi-Fi network.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AirTheme.gray500,
+                                  color: colors.textSecondary,
                                   height: 1.4,
                                 ),
                               ),
                               const SizedBox(height: 24),
-                              const Text(
+                              Text(
                                 'If router AP isolation prevents multicast discovery, use Scan QR or Enter IP below.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AirTheme.gray500,
+                                  color: colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -363,8 +364,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       }
 
                       return RefreshIndicator(
-                        color: AirTheme.white,
-                        backgroundColor: AirTheme.black,
+                        color: colors.activeFill,
+                        backgroundColor: colors.bg,
                         onRefresh: () async {
                           await widget.services.discoveryManager.scanSubnetNow();
                         },
@@ -410,19 +411,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                     const SizedBox(height: 6),
                                     Text(
                                       '${dev.ip ?? '127.0.0.1'}:${dev.port}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 13,
-                                        color: AirTheme.white,
+                                        color: colors.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       'FP: $shortFp',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 11,
-                                        color: AirTheme.gray500,
+                                        color: colors.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(height: 14),
@@ -449,11 +450,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 // Bottom Action Buttons
                 Container(
                   padding: const EdgeInsets.all(16.0),
-                  decoration: const BoxDecoration(
-                    color: AirTheme.gray900,
+                  decoration: BoxDecoration(
+                    color: colors.cardBg,
                     border: Border(
                       top: BorderSide(
-                        color: AirTheme.gray700,
+                        color: colors.border,
                         width: AirpadTokens.borderWidth,
                       ),
                     ),

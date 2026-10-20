@@ -15,6 +15,7 @@ class AirCodeBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     // Format "123 456" for readability if 6 digits
     final displayCode = code.length == 6
         ? '${code.substring(0, 3)} ${code.substring(3, 6)}'
@@ -26,17 +27,17 @@ class AirCodeBox extends StatelessWidget {
         vertical: AirpadTokens.spacing16,
       ),
       decoration: BoxDecoration(
-        color: AirTheme.black,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
-        border: Border.all(color: AirTheme.white, width: AirpadTokens.borderWidth),
+        border: Border.all(color: colors.activeFill, width: AirpadTokens.borderWidth),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
-              color: AirTheme.gray500,
+            style: TextStyle(
+              color: colors.textSecondary,
               fontSize: AirpadTokens.fontSectionLabel,
               letterSpacing: AirpadTokens.trackingSection,
               fontWeight: FontWeight.bold,
@@ -45,8 +46,8 @@ class AirCodeBox extends StatelessWidget {
           const SizedBox(height: AirpadTokens.spacing8),
           Text(
             displayCode,
-            style: const TextStyle(
-              color: AirTheme.white,
+            style: TextStyle(
+              color: colors.textPrimary,
               fontFamily: 'monospace',
               fontSize: AirpadTokens.fontDisplay,
               fontWeight: FontWeight.bold,

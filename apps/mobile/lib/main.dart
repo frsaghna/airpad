@@ -46,9 +46,10 @@ class _AirpadMobileAppState extends State<AirpadMobileApp> {
           home: FutureBuilder<void>(
             future: _initFuture,
             builder: (context, snapshot) {
+              final colors = AirColors.of(context);
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Scaffold(
-                  backgroundColor: AirTheme.black,
+                return Scaffold(
+                  backgroundColor: colors.bg,
                   body: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -60,11 +61,11 @@ class _AirpadMobileAppState extends State<AirpadMobileApp> {
                             fontWeight: FontWeight.bold,
                             fontSize: 24,
                             letterSpacing: 4.0,
-                            color: AirTheme.white,
+                            color: colors.textPrimary,
                           ),
                         ),
-                        SizedBox(height: 16),
-                        AirStatusBadge(
+                        const SizedBox(height: 16),
+                        const AirStatusBadge(
                           type: AirStatusType.idle,
                           customLabel: 'INITIALIZING...',
                         ),
@@ -76,28 +77,28 @@ class _AirpadMobileAppState extends State<AirpadMobileApp> {
 
               if (snapshot.hasError) {
                 return Scaffold(
-                  backgroundColor: AirTheme.black,
+                  backgroundColor: colors.bg,
                   body: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.error_outline, size: 48, color: AirTheme.white),
+                          Icon(Icons.error_outline, size: 48, color: colors.textPrimary),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'STARTUP ERROR',
                             style: TextStyle(
                               fontFamily: 'monospace',
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
-                              color: AirTheme.white,
+                              color: colors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             snapshot.error.toString(),
-                            style: const TextStyle(color: AirTheme.gray500),
+                            style: TextStyle(color: colors.textSecondary),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),

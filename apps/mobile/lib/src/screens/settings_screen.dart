@@ -47,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListenableBuilder(
       listenable: widget.services,
       builder: (context, _) {
+        final colors = AirColors.of(context);
         final id = widget.services.identity;
         final trustedList = widget.services.trustStore.trustedDevices;
 
@@ -62,14 +63,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'DEVICE IDENTITY',
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.0,
-                        color: AirTheme.gray500,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -80,16 +81,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             child: TextField(
                               controller: _aliasController,
                               style: const TextStyle(fontWeight: FontWeight.bold),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 isDense: true,
                                 border: OutlineInputBorder(
-                                  borderSide: BorderSide(color: AirTheme.gray700),
+                                  borderSide: BorderSide(color: colors.border),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: AirTheme.gray700),
+                                  borderSide: BorderSide(color: colors.border),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: AirTheme.white),
+                                  borderSide: BorderSide(color: colors.activeFill),
                                 ),
                               ),
                             ),
@@ -125,21 +126,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'SHA-256 FINGERPRINT',
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 10,
-                        color: AirTheme.gray500,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     SelectableText(
                       id.fingerprint,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
-                        color: AirTheme.white,
+                        color: colors.textPrimary,
                       ),
                     ),
                   ],
@@ -153,14 +154,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'TOUCHPAD & GESTURES',
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.0,
-                        color: AirTheme.gray500,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -184,8 +185,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       min: 0.5,
                       max: 3.0,
                       divisions: 25,
-                      activeColor: AirTheme.white,
-                      inactiveColor: AirTheme.gray700,
+                      activeColor: colors.activeFill,
+                      inactiveColor: colors.border,
                       onChanged: (val) {
                         widget.services.setSensitivity(val);
                       },
@@ -241,14 +242,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'APPEARANCE',
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.0,
-                        color: AirTheme.gray500,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -273,33 +274,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'TRUSTED RECEIVERS',
                           style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.0,
-                            color: AirTheme.gray500,
+                            color: colors.textSecondary,
                           ),
                         ),
                         Text(
                           '${trustedList.length} PAIRED',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 11,
-                            color: AirTheme.gray500,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     if (trustedList.isEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Text(
                           'No trusted desktop receivers yet. Pair with a desktop to connect instantly.',
-                          style: TextStyle(color: AirTheme.gray500, fontSize: 13),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 13),
                         ),
                       ),
                     ] else ...[
@@ -311,10 +312,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           margin: const EdgeInsets.only(bottom: 8.0),
                           padding: const EdgeInsets.all(12.0),
                           decoration: BoxDecoration(
-                            color: AirTheme.black,
+                            color: colors.surface,
                             borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
                             border: Border.all(
-                              color: AirTheme.gray700,
+                              color: colors.border,
                               width: AirpadTokens.borderWidth,
                             ),
                           ),
@@ -335,10 +336,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       shortFp,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 11,
-                                        color: AirTheme.gray500,
+                                        color: colors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -364,10 +365,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
 
               // About & Protocol Info
-              const Center(
+              Center(
                 child: Column(
                   children: [
-                    Text(
+                    const Text(
                       'AIRPAD MOBILE — v1.0.0',
                       style: TextStyle(
                         fontFamily: 'monospace',
@@ -376,10 +377,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         letterSpacing: 1.0,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       'LocalSend-style Zero-Config LAN Discovery & TLS Control',
-                      style: TextStyle(fontSize: 12, color: AirTheme.gray500),
+                      style: TextStyle(fontSize: 12, color: colors.textSecondary),
                     ),
                   ],
                 ),

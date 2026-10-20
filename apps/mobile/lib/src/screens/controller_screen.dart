@@ -37,16 +37,17 @@ class _ControllerScreenState extends State<ControllerScreen> {
     _sessionSub = widget.services.sessionClient.onStateChanged.listen((state) {
       if (!mounted) return;
       if (state is SessionDisconnected || state is SessionRejected) {
+        final snackColors = AirColors.of(context);
         Navigator.of(context).popUntil((route) => route.isFirst);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AirTheme.white,
+            backgroundColor: snackColors.activeFill,
             content: Text(
               state is SessionRejected
                   ? 'DISCONNECTED: ${state.reason}'
                   : 'DISCONNECTED FROM RECEIVER',
-              style: const TextStyle(
-                color: AirTheme.black,
+              style: TextStyle(
+                color: snackColors.onActiveFill,
                 fontFamily: 'monospace',
                 fontWeight: FontWeight.bold,
               ),
@@ -97,6 +98,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     final state = widget.services.sessionState;
     final serverDevice = state is SessionConnected ? state.serverDevice : null;
     final alias = serverDevice?.alias ?? 'Desktop Receiver';
@@ -106,17 +108,18 @@ class _ControllerScreenState extends State<ControllerScreen> {
     final keyboard = widget.services.keyboardState;
 
     return Scaffold(
-      backgroundColor: AirTheme.black,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Column(
           children: [
             // Top Controller Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
+                color: colors.bg,
                 border: Border(
                   bottom: BorderSide(
-                    color: AirTheme.gray700,
+                    color: colors.border,
                     width: AirpadTokens.borderWidth,
                   ),
                 ),
@@ -124,7 +127,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AirTheme.white),
+                    icon: Icon(Icons.arrow_back, color: colors.textPrimary),
                     onPressed: () async {
                       await widget.services.disconnect();
                       if (context.mounted) {
@@ -140,11 +143,11 @@ class _ControllerScreenState extends State<ControllerScreen> {
                       children: [
                         Text(
                           alias.toUpperCase(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'monospace',
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: AirTheme.white,
+                            color: colors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -152,10 +155,10 @@ class _ControllerScreenState extends State<ControllerScreen> {
                         if (shortFp.isNotEmpty)
                           Text(
                             'FP: $shortFp...',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 10,
-                              color: AirTheme.gray500,
+                              color: colors.textSecondary,
                             ),
                           ),
                       ],
@@ -169,7 +172,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
                   IconButton(
                     icon: Icon(
                       _showTextBar ? Icons.keyboard_hide : Icons.keyboard,
-                      color: AirTheme.white,
+                      color: colors.textPrimary,
                     ),
                     onPressed: () {
                       setState(() {
@@ -190,7 +193,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
             // Mode Selector Tabs
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: AirTheme.gray900,
+              color: colors.cardBg,
               child: Row(
                 children: [
                   Expanded(
@@ -224,11 +227,11 @@ class _ControllerScreenState extends State<ControllerScreen> {
             if (_showTextBar)
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  color: AirTheme.gray900,
+                decoration: BoxDecoration(
+                  color: colors.cardBg,
                   border: Border(
                     bottom: BorderSide(
-                      color: AirTheme.gray700,
+                      color: colors.border,
                       width: AirpadTokens.borderWidth,
                     ),
                   ),
@@ -240,20 +243,20 @@ class _ControllerScreenState extends State<ControllerScreen> {
                         controller: _textController,
                         focusNode: _textFocusNode,
                         autofocus: true,
-                        style: const TextStyle(color: AirTheme.white),
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: colors.textPrimary),
+                        decoration: InputDecoration(
                           hintText: 'Type text or emoji to stream...',
-                          hintStyle: TextStyle(color: AirTheme.gray500),
+                          hintStyle: TextStyle(color: colors.textSecondary),
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           border: OutlineInputBorder(
-                            borderSide: BorderSide(color: AirTheme.gray700),
+                            borderSide: BorderSide(color: colors.border),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: AirTheme.gray700),
+                            borderSide: BorderSide(color: colors.border),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: AirTheme.white),
+                            borderSide: BorderSide(color: colors.activeFill),
                           ),
                         ),
                         onSubmitted: (val) {
@@ -277,9 +280,9 @@ class _ControllerScreenState extends State<ControllerScreen> {
             // Tab Content
             Expanded(
               child: switch (_currentTab) {
-                ControllerTab.touchpad => _buildTouchpadView(keyboard),
-                ControllerTab.keyboard => _buildShortcutsView(keyboard),
-                ControllerTab.media => _buildMediaView(),
+                ControllerTab.touchpad => _buildTouchpadView(keyboard, colors),
+                ControllerTab.keyboard => _buildShortcutsView(keyboard, colors),
+                ControllerTab.media => _buildMediaView(colors),
               },
             ),
           ],
@@ -288,7 +291,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
     );
   }
 
-  Widget _buildTouchpadView(KeyboardState keyboard) {
+  Widget _buildTouchpadView(KeyboardState keyboard, AirColors colors) {
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Column(
@@ -389,7 +392,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
                   if (keyboard.activeModifiers.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     IconButton(
-                      icon: const Icon(Icons.clear, color: AirTheme.white, size: 20),
+                      icon: Icon(Icons.clear, color: colors.textPrimary, size: 20),
                       onPressed: () {
                         widget.services.triggerHaptic();
                         keyboard.clearModifiers();
@@ -429,20 +432,20 @@ class _ControllerScreenState extends State<ControllerScreen> {
     );
   }
 
-  Widget _buildShortcutsView(KeyboardState keyboard) {
+  Widget _buildShortcutsView(KeyboardState keyboard, AirColors colors) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'COMMON SHORTCUTS',
             style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.0,
-              color: AirTheme.gray500,
+              color: colors.textSecondary,
             ),
           ),
           const SizedBox(height: 12),
@@ -485,14 +488,14 @@ class _ControllerScreenState extends State<ControllerScreen> {
           ),
 
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'FUNCTION KEYS',
             style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.0,
-              color: AirTheme.gray500,
+              color: colors.textSecondary,
             ),
           ),
           const SizedBox(height: 12),
@@ -521,7 +524,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
     );
   }
 
-  Widget _buildMediaView() {
+  Widget _buildMediaView(AirColors colors) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -529,7 +532,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               'MEDIA & AUDIO CONTROLS',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -537,7 +540,7 @@ class _ControllerScreenState extends State<ControllerScreen> {
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.0,
-                color: AirTheme.gray500,
+                color: colors.textSecondary,
               ),
             ),
             const SizedBox(height: 32),
@@ -637,16 +640,17 @@ class _ModeTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? AirTheme.white : Colors.transparent,
+          color: isActive ? colors.activeFill : Colors.transparent,
           borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
           border: Border.all(
-            color: isActive ? AirTheme.white : AirTheme.gray700,
+            color: isActive ? colors.activeFill : colors.border,
             width: AirpadTokens.borderWidth,
           ),
         ),
@@ -657,7 +661,7 @@ class _ModeTabButton extends StatelessWidget {
             fontFamily: 'monospace',
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: isActive ? AirTheme.black : AirTheme.white,
+            color: isActive ? colors.onActiveFill : colors.textPrimary,
           ),
         ),
       ),
@@ -678,6 +682,7 @@ class _ModifierKeyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
@@ -685,10 +690,10 @@ class _ModifierKeyButton extends StatelessWidget {
         height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isActive ? AirTheme.white : AirTheme.black,
+          color: isActive ? colors.activeFill : colors.cardBg,
           borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
           border: Border.all(
-            color: isActive ? AirTheme.white : AirTheme.gray700,
+            color: isActive ? colors.activeFill : colors.border,
             width: AirpadTokens.borderWidth,
           ),
         ),
@@ -698,7 +703,7 @@ class _ModifierKeyButton extends StatelessWidget {
             fontFamily: 'monospace',
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: isActive ? AirTheme.black : AirTheme.white,
+            color: isActive ? colors.onActiveFill : colors.textPrimary,
           ),
         ),
       ),
@@ -721,6 +726,7 @@ class _KeyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     return Expanded(
       child: InkWell(
         onTap: () {
@@ -732,20 +738,20 @@ class _KeyButton extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AirTheme.gray900,
+            color: colors.cardBg,
             borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
             border: Border.all(
-              color: AirTheme.gray700,
+              color: colors.border,
               width: AirpadTokens.borderWidth,
             ),
           ),
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'monospace',
               fontWeight: FontWeight.bold,
               fontSize: 11,
-              color: AirTheme.white,
+              color: colors.textPrimary,
             ),
           ),
         ),

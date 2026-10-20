@@ -50,8 +50,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     return Scaffold(
-      backgroundColor: AirTheme.black,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('SCAN DESKTOP QR'),
         actions: [
@@ -79,7 +80,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.camera_alt_outlined, size: 48, color: AirTheme.white),
+                      Icon(Icons.camera_alt_outlined, size: 48, color: colors.textPrimary),
                       const SizedBox(height: 16),
                       Text(
                         'CAMERA ERROR: ${error.errorCode.name}',
@@ -89,7 +90,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                       const SizedBox(height: 8),
                       Text(
                         error.errorDetails?.message ?? 'Ensure camera permissions are granted.',
-                        style: const TextStyle(color: AirTheme.gray500),
+                        style: TextStyle(color: colors.textSecondary),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),

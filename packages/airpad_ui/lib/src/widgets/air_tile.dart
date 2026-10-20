@@ -23,9 +23,10 @@ class AirTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? AirTheme.white : Colors.transparent;
-    final fgTitle = selected ? AirTheme.black : AirTheme.white;
-    final fgSub = selected ? AirTheme.gray900 : AirTheme.gray500;
+    final colors = AirColors.of(context);
+    final bg = selected ? colors.activeFill : Colors.transparent;
+    final fgTitle = selected ? colors.onActiveFill : colors.textPrimary;
+    final fgSub = selected ? colors.onActiveFill.withOpacity(0.7) : colors.textSecondary;
 
     return InkWell(
       onTap: onTap,
@@ -42,8 +43,8 @@ class AirTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
           border: selected
               ? null
-              : const Border(
-                  bottom: BorderSide(color: AirTheme.gray700, width: AirpadTokens.borderWidth),
+              : Border(
+                  bottom: BorderSide(color: colors.border, width: AirpadTokens.borderWidth),
                 ),
         ),
         child: Row(

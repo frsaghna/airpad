@@ -62,6 +62,7 @@ class _AirTouchpadSurfaceState extends State<AirTouchpadSurface> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: _onPointerDown,
@@ -70,10 +71,10 @@ class _AirTouchpadSurfaceState extends State<AirTouchpadSurface> {
       onPointerCancel: _onPointerCancel,
       child: Container(
         decoration: BoxDecoration(
-          color: AirTheme.black,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
           border: Border.all(
-            color: AirTheme.gray700,
+            color: colors.border,
             width: AirpadTokens.borderWidth,
           ),
         ),
@@ -83,6 +84,7 @@ class _AirTouchpadSurfaceState extends State<AirTouchpadSurface> {
             painter: _TouchFeedbackPainter(
               touchLocations: _touchLocations.values.toList(),
               isDragging: widget.processor.isDragging,
+              colors: colors,
             ),
             size: Size.infinite,
           ),
@@ -96,16 +98,18 @@ class _TouchFeedbackPainter extends CustomPainter {
   const _TouchFeedbackPainter({
     required this.touchLocations,
     required this.isDragging,
+    required this.colors,
   });
 
   final List<Offset> touchLocations;
   final bool isDragging;
+  final AirColors colors;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Optional subtle grid lines or center mark
+    // Subtle center mark
     final centerPaint = Paint()
-      ..color = AirTheme.gray700
+      ..color = colors.border
       ..strokeWidth = 1.0;
 
     // Small subtle center crosshair
@@ -117,7 +121,7 @@ class _TouchFeedbackPainter extends CustomPainter {
 
     // Active touch rings (Section 8.4)
     final ringPaint = Paint()
-      ..color = AirTheme.white
+      ..color = colors.activeFill
       ..style = isDragging ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -130,6 +134,7 @@ class _TouchFeedbackPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TouchFeedbackPainter oldDelegate) {
     return oldDelegate.touchLocations != touchLocations ||
-        oldDelegate.isDragging != isDragging;
+        oldDelegate.isDragging != isDragging ||
+        oldDelegate.colors != colors;
   }
 }

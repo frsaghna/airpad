@@ -29,6 +29,7 @@ class AirButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     final enabled = onPressed != null;
 
     Color bg;
@@ -37,23 +38,23 @@ class AirButton extends StatelessWidget {
 
     if (!enabled) {
       bg = Colors.transparent;
-      fg = AirTheme.gray500;
-      border = const BorderSide(color: AirTheme.gray700, width: AirpadTokens.borderWidth);
+      fg = colors.textSecondary;
+      border = BorderSide(color: colors.border, width: AirpadTokens.borderWidth);
     } else {
       switch (variant) {
         case AirButtonVariant.primary:
-          bg = AirTheme.white;
-          fg = AirTheme.black;
+          bg = colors.activeFill;
+          fg = colors.onActiveFill;
           border = BorderSide.none;
           break;
         case AirButtonVariant.outline:
           bg = Colors.transparent;
-          fg = AirTheme.white;
-          border = const BorderSide(color: AirTheme.white, width: AirpadTokens.borderWidth);
+          fg = colors.textPrimary;
+          border = BorderSide(color: colors.textPrimary, width: AirpadTokens.borderWidth);
           break;
         case AirButtonVariant.ghost:
           bg = Colors.transparent;
-          fg = AirTheme.white;
+          fg = colors.textPrimary;
           border = BorderSide.none;
           break;
       }
@@ -64,7 +65,10 @@ class AirButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) ...[
-          icon!,
+          IconTheme.merge(
+            data: IconThemeData(color: fg, size: 18),
+            child: icon!,
+          ),
           const SizedBox(width: AirpadTokens.spacing8),
         ],
         Text(

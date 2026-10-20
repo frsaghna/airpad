@@ -22,6 +22,7 @@ class AirStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     Color bg;
     Color fg;
     Border? border;
@@ -30,29 +31,29 @@ class AirStatusBadge extends StatelessWidget {
 
     switch (type) {
       case AirStatusType.connected:
-        bg = AirTheme.white;
-        fg = AirTheme.black;
+        bg = colors.activeFill;
+        fg = colors.onActiveFill;
         border = null;
         symbol = '●';
         defaultText = 'CONNECTED';
         break;
       case AirStatusType.advertising:
         bg = Colors.transparent;
-        fg = AirTheme.white;
-        border = Border.all(color: AirTheme.white, width: AirpadTokens.borderWidth);
+        fg = colors.textPrimary;
+        border = Border.all(color: colors.textPrimary, width: AirpadTokens.borderWidth);
         symbol = '○';
         defaultText = 'ADVERTISING';
         break;
       case AirStatusType.idle:
         bg = Colors.transparent;
-        fg = AirTheme.gray500;
-        border = Border.all(color: AirTheme.gray700, width: AirpadTokens.borderWidth);
+        fg = colors.textSecondary;
+        border = Border.all(color: colors.border, width: AirpadTokens.borderWidth);
         symbol = '─';
         defaultText = 'IDLE';
         break;
       case AirStatusType.error:
-        bg = AirTheme.white;
-        fg = AirTheme.black;
+        bg = colors.activeFill;
+        fg = colors.onActiveFill;
         border = null;
         symbol = '✕';
         defaultText = 'ERROR';

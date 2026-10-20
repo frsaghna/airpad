@@ -19,12 +19,13 @@ class AirCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AirColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: AirTheme.gray900,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(AirpadTokens.cornerRadius),
         border: Border.all(
-          color: AirTheme.gray700,
+          color: colors.border,
           width: AirpadTokens.borderWidth,
         ),
       ),
@@ -39,8 +40,8 @@ class AirCard extends StatelessWidget {
               children: [
                 Text(
                   title!.toUpperCase(),
-                  style: const TextStyle(
-                    color: AirTheme.gray500,
+                  style: TextStyle(
+                    color: colors.textSecondary,
                     fontSize: AirpadTokens.fontSectionLabel,
                     fontWeight: FontWeight.bold,
                     letterSpacing: AirpadTokens.trackingSection,
