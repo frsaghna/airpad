@@ -1,0 +1,70 @@
+name: Build & Release macOS
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS Receiver
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable macOS Desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install dependencies
+        run: |
+          cd packages/airpad_core && flutter pub get
+          cd ../airpad_ui && flutter pub get
+          cd ../../apps/desktop && flutter pub get
+
+      - name: Build macOS App
+        run: |
+          cd apps/desktop
+          flutter build macos --release \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES
+
+      - name: Package macOS App into ZIP
+        run: |
+          cd apps/desktop/build/macos/Build/Products/Release
+          zip -r -y airpad-macos.zip AIRPAD.app
+          mv airpad-macos.zip "${{ github.workspace }}/"
+
+      - name: Generate Checksum
+        run: |
+          shasum -a 256 airpad-macos.zip > airpad-macos.zip.sha256
+          cat airpad-macos.zip.sha256
+
+      - name: Upload Artifact to Workflow Run
+        uses: actions/upload-artifact@v4
+        with:
+          name: airpad-macos
+          path: |
+            airpad-macos.zip
+            airpad-macos.zip.sha256
+
+      - name: Upload to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          if [[ "${TAG_NAME}" == "master" || "${TAG_NAME}" == "main" || -z "${TAG_NAME}" ]]; then
+            TAG_NAME="v1.0.0-beta"
+          fi
+          gh release upload "${TAG_NAME}" airpad-macos.zip airpad-macos.zip.sha256 --clobber

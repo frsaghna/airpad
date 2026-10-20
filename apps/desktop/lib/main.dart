@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:airpad_core/airpad_core.dart';
 import 'package:airpad_ui/airpad_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 void main() async {
@@ -112,9 +113,21 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
       ip: _localIp,
     );
 
-    // 4. Inject client to helper daemon
-    final inject = AirpadInjectClient();
-    _injectConnected = await inject.connect();
+    // 4. Inject client / helper setup
+    const macChannel = MethodChannel('com.airpad.desktop/inject');
+    AirpadInjectClient? inject;
+
+    if (Platform.isMacOS) {
+      try {
+        final bool isTrusted = await macChannel.invokeMethod('checkPermissions') ?? false;
+        _injectConnected = isTrusted;
+      } catch (_) {
+        _injectConnected = false;
+      }
+    } else {
+      inject = AirpadInjectClient();
+      _injectConnected = await inject.connect();
+    }
 
     // 5. TLS Session Server
     final server = TlsSessionServer(
@@ -125,9 +138,13 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
     );
     await server.start();
 
-    // Forward events from session to uinput helper
+    // Forward events from session to platform injector
     server.onEventReceived.listen((event) {
-      inject.sendEvent(event);
+      if (Platform.isMacOS) {
+        macChannel.invokeMethod('injectEvent', event.toJson());
+      } else {
+        inject?.sendEvent(event);
+      }
     });
 
     server.activeControllerStream.listen((controller) {
@@ -137,8 +154,11 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
     });
 
     server.onClientDisconnected.listen((_) {
-      // Disconnect clears any held keys in the helper
-      inject.disconnect();
+      if (Platform.isMacOS) {
+        macChannel.invokeMethod('releaseAll');
+      } else {
+        inject?.disconnect();
+      }
     });
 
     // Pairing prompt dialog handler
@@ -364,7 +384,12 @@ class _AirpadDesktopHomeState extends State<AirpadDesktopHome> {
                   children: [
                     AirStatusBadge(type: statusType, customLabel: statusLabel),
                     if (!_injectConnected)
-                      const AirStatusBadge(type: AirStatusType.error, customLabel: 'INPUT HELPER DISCONNECTED'),
+                      AirStatusBadge(
+                        type: AirStatusType.error,
+                        customLabel: Platform.isMacOS
+                            ? 'ACCESSIBILITY PERMISSION NEEDED'
+                            : 'INPUT HELPER DISCONNECTED',
+                      ),
                   ],
                 ),
                 const SizedBox(height: AirpadTokens.spacing16),

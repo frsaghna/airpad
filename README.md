@@ -1,18 +1,35 @@
 # AIRPAD
 
-> **Turn your Android phone into a wireless trackpad and keyboard for Linux.**  
-> Seamless zero-config Wi-Fi discovery, kernel-level `/dev/uinput` injection, strict monochrome aesthetic, and end-to-end TLS encryption. Works natively on **Wayland** (Hyprland, Sway, GNOME, KDE) and **X11**.
+> **Turn your Android phone into a wireless trackpad and keyboard for Linux & macOS.**  
+> Seamless zero-config Wi-Fi discovery, native input injection, strict monochrome aesthetic, and end-to-end TLS encryption. Works natively on **Linux** (Wayland & X11) and **macOS** (Apple Silicon & Intel).
 
 ---
 
 ## ⚡ Quick Start
 
-### 1. Install Desktop Receiver (Linux)
+### 1. Install Desktop Receiver
 
-No repository cloning or compiling needed. Download the pre-built bundle from [**GitHub Releases**](https://github.com/frsaghna/airpad/releases/latest):
+No repository cloning or compiling needed. Download the pre-built bundle for your OS from [**GitHub Releases**](https://github.com/frsaghna/airpad/releases/latest):
+
+#### 🍎 macOS (MacBook, Mac Mini, iMac)
+
+Download **`airpad-macos.zip`** and extract:
 
 ```bash
-# Download and extract the release bundle
+curl -sLO https://github.com/frsaghna/airpad/releases/latest/download/airpad-macos.zip
+unzip airpad-macos.zip
+mv AIRPAD.app /Applications/
+open /Applications/AIRPAD.app
+```
+
+> **Accessibility Permission:** On first launch, macOS will ask to grant **Accessibility** permission so AIRPAD can control the mouse cursor and keyboard. Enable it in **System Settings → Privacy & Security → Accessibility**.  
+> *(If macOS blocks opening an unnotarized app, run: `xattr -cr /Applications/AIRPAD.app`)*
+
+#### 🐧 Linux (Arch, Fedora, Ubuntu, Debian, etc.)
+
+Download **`airpad-linux-x86_64.tar.gz`** and run the automated installer:
+
+```bash
 curl -sLO https://github.com/frsaghna/airpad/releases/latest/download/airpad-linux-x86_64.tar.gz
 tar -xzf airpad-linux-x86_64.tar.gz
 cd airpad-linux-x86_64
@@ -96,7 +113,16 @@ Switch between modes using the top tabs on your mobile controller:
    ```
 3. If your router blocks multicast (AP Isolation), connect directly using **Scan QR** or **Enter IP**.
 
-### Check the background input service:
+### macOS: Accessibility Permission Needed
+If the cursor doesn't move or AIRPAD displays an `ACCESSIBILITY PERMISSION NEEDED` badge:
+1. Open **System Settings → Privacy & Security → Accessibility**.
+2. Make sure the toggle next to **AIRPAD** is turned **ON**.
+3. If macOS blocks opening the app initially, right-click `AIRPAD.app` → **Open**, or run:
+   ```bash
+   xattr -cr /Applications/AIRPAD.app
+   ```
+
+### Linux: Check the background input service
 AIRPAD uses a lightweight Rust helper (`airpad-inject`) to create a virtual input device at `/dev/uinput`:
 ```bash
 # Check service status
