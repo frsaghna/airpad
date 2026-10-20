@@ -37,6 +37,10 @@ jobs:
           cd apps/desktop
           flutter build macos --release
 
+      - name: Force Ad-hoc Codesign
+        run: |
+          codesign --force --deep --sign - apps/desktop/build/macos/Build/Products/Release/AIRPAD.app
+
       - name: Package macOS App into ZIP
         run: |
           cd apps/desktop/build/macos/Build/Products/Release
