@@ -9,11 +9,12 @@
 
 ### 1. Install Desktop Receiver (Linux)
 
-Pre-built binaries are ready in [`dist/`](dist/):
+No repository cloning or compiling needed. Download the pre-built bundle from [**GitHub Releases**](https://github.com/frsaghna/airpad/releases/latest):
 
 ```bash
-# Extract the release bundle
-tar -xzf dist/airpad-linux-x86_64.tar.gz
+# Download and extract the release bundle
+curl -sLO https://github.com/frsaghna/airpad/releases/latest/download/airpad-linux-x86_64.tar.gz
+tar -xzf airpad-linux-x86_64.tar.gz
 cd airpad-linux-x86_64
 
 # Run installer (do NOT run with sudo; it prompts for sudo only when needed)
@@ -25,19 +26,17 @@ Then launch **AIRPAD** from your application launcher or terminal:
 airpad
 ```
 
-> **Arch Linux users:** You can also install directly with `cd packaging && makepkg -si`.
+> **Arch Linux users:** You can also clone and install directly with `cd packaging && makepkg -si`.
 
 ---
 
 ### 2. Install Mobile App (Android)
 
-Install the pre-built APK from [`dist/airpad-mobile.apk`](dist/airpad-mobile.apk):
+Download **`airpad-mobile.apk`** from [**GitHub Releases**](https://github.com/frsaghna/airpad/releases/latest) directly on your phone and tap to install, or install via ADB:
 
 ```bash
-# Via ADB:
-adb install dist/airpad-mobile.apk
-
-# Or copy dist/airpad-mobile.apk to your phone and install it.
+curl -sLO https://github.com/frsaghna/airpad/releases/latest/download/airpad-mobile.apk
+adb install airpad-mobile.apk
 ```
 
 ---
